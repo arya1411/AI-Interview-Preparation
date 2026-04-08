@@ -4,7 +4,7 @@ const User = require("../models/User");
 
 
 
-const Protect = async(req , res , next) =>{
+const protect = async(req , res , next) =>{
     try {
         let token = req.headers.authorization ;
 
@@ -24,4 +24,4 @@ const Protect = async(req , res , next) =>{
 
 
 
-module.exports = {protect} ;
+module.exports = { protect };
