@@ -8,9 +8,18 @@ const { protect } = require("./middlewares/authMiddleware");
 const sessionRoute = require('./routes/sessionRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const { generateInterviewQuestions, generateConceptExplanation } = require("./controllers/aiControllers");
+const {
+    apiLimiter,
+    loginLimiter,
+    registerLimiter,
+    aiBurstLimiter,
+    aiDailyLimiter,
+} = require("./middlewares/rateLimiters");
 
 
 const app = express();
+
+app.set("trust proxy", 1);
 
 
 
@@ -28,12 +37,16 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/api", apiLimiter);
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registerLimiter);
+
 app.use("/api/auth", authRoutes);
 app.use('/api/sessions' , sessionRoute);
 app.use('/api/questions' , questionRoutes);
 
-app.use("/api/ai/generate-questions" , protect , generateInterviewQuestions);
-app.use("api/ai/generate-explanation" , protect , generateConceptExplanation);
+app.post("/api/ai/generate-questions" , protect , aiBurstLimiter, aiDailyLimiter, generateInterviewQuestions);
+app.post("/api/ai/generate-explanation" , protect , aiBurstLimiter, aiDailyLimiter, generateConceptExplanation);
 
 app.use("/uploads" , express.static(path.join(__dirname , "uploads") , {}));
 

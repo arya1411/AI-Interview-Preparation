@@ -1,111 +1,144 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* Tell Tailwind v4 to use [data-theme='dark'] for dark: classes */
+@variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ──────────────────────────────────────────
+   MONOCHROME DESIGN SYSTEM
+   ────────────────────────────────────────── */
 @theme {
-  --font-display: "Poppins", sans-serif;
+  --font-display: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-heading: "Sora", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   --breakpoint-3xl: 1920px;
-  --color-primary: #ff9324;
+
+  /* Brand monochrome palette */
+  --color-primary: #000000;
+  --color-primary-inverse: #ffffff;
+
+  /* Neutrals for light/dark */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
 }
 
+/* ──────────────────────────────────────────
+   BASE LAYER
+   ────────────────────────────────────────── */
 @layer base {
   html {
     font-family: var(--font-display);
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    background-color: #fcfbfc;
-    overflow-x: hidden;
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  /* Dark mode override */
+  [data-theme='dark'] {
+    background-color: var(--color-neutral-950);
+    color: var(--color-neutral-100);
+  }
+
+  ::selection {
+    background-color: #000000;
+    color: #ffffff;
+  }
+
+  [data-theme='dark'] ::selection {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  /* Modern Gen-Z inspired typography scope for home page */
+  .claude-home {
+    font-family: var(--font-display);
+  }
+
+  .claude-home h1,
+  .claude-home h2 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    line-height: 0.95;
+  }
+
+  .claude-home p,
+  .claude-home a,
+  .claude-home button,
+  .claude-home span {
+    font-family: var(--font-display);
   }
 }
 
-/* Custom scrollbar styling */
-.custom-scrollbar::-webkit-scrollbar {
+/* ──────────────────────────────────────────
+   SCROLLBAR (Minimalist)
+   ────────────────────────────────────────── */
+::-webkit-scrollbar {
   width: 4px;
 }
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(100, 100, 100, 0.4);
-  border-radius: 10px;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-@layer utilities {
-  /* Animate text with a shine effect */
-  @keyframes text-shine {
-    0% {
-      background-position: 0% 50%;
-    }
-    100% {
-      background-position: 100% 50%;
-    }
-  }
-
-  .animate-text-shine {
-    animation: text-shine 3s ease-in-out infinite alternate;
-  }
-
-  @keyframes blob1 {
-    0%,
-    100% {
-      transform: translate(0px, 0px) scale(1);
-    }
-    33% {
-      transform: translate(30px, -60px) scale(1.1);
-    }
-    66% {
-      transform: translate(-20px, 20px) scale(0.9);
-    }
-  }
-
-  @keyframes blob2 {
-    0%,
-    100% {
-      transform: translate(0px, 0px) scale(1);
-    }
-    33% {
-      transform: translate(-40px, 60px) scale(1.05);
-    }
-    66% {
-      transform: translate(20px, -40px) scale(0.95);
-    }
-  }
-
-  @keyframes blob3 {
-    0%,
-    100% {
-      transform: translate(0px, 0px) scale(1);
-    }
-    33% {
-      transform: translate(20px, 140px) scale(1.15);
-    }
-    66% {
-      transform: translate(-30px, -30px) scale(0.85);
-    }
-  }
-
-  .animate-blob1 {
-    animation: blob1 8s ease-in-out infinite;
-  }
-
-  .animate-blob2 {
-    animation: blob2 10s ease-in-out infinite;
-  }
-
-  .animate-blob3 {
-    animation: blob3 12s ease-in-out infinite;
-  }
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #404040;
 }
 
 @layer components {
-  .input-box {
-    @apply w-full flex justify-between gap-3 text-sm text-black bg-gray-50/50 rounded px-4 py-3 mb-4 mt-3 border border-gray-300/70;
+  /* High contrast cards */
+  .card-minimal {
+    @apply border border-neutral-200 bg-white p-6 transition-all;
+  }
+  [data-theme='dark'] .card-minimal {
+    @apply border-neutral-800 bg-neutral-900;
   }
 
+  /* High contrast buttons */
   .btn-primary {
-    @apply w-full flex items-center justify-center gap-3 text-sm font-medium text-white bg-black shadow-lg shadow-black/10 rounded-lg px-4 py-3;
+    @apply inline-flex items-center justify-center gap-2 bg-black px-6 py-2.5 text-sm font-medium text-white
+           transition-all hover:bg-neutral-800 disabled:opacity-50;
+  }
+  [data-theme='dark'] .btn-primary {
+    @apply bg-white text-black hover:bg-neutral-200;
   }
 
-  .btn-small {
-    @apply flex items-center justify-center gap-3 bg-linear-to-r from-[#FF9324] to-[#e99a4b] text-sm font-semibold text-white rounded-lg px-4 py-2;
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 border border-neutral-200 bg-white px-6 py-2.5 text-sm font-medium text-black
+           transition-all hover:bg-neutral-50;
+  }
+  [data-theme='dark'] .btn-secondary {
+    @apply border-neutral-800 bg-neutral-900 text-white hover:bg-neutral-800;
+  }
+
+  /* Inputs */
+  .input-minimal {
+    @apply w-full border border-neutral-200 bg-white px-4 py-2.5 text-sm text-black placeholder-neutral-400 outline-none
+           focus:border-black;
+  }
+  [data-theme='dark'] .input-minimal {
+    @apply border-neutral-800 bg-neutral-950 text-white placeholder-neutral-500 focus:border-white;
+  }
+
+  /* Badges */
+  .badge-minimal {
+    @apply inline-flex items-center gap-1.5 border border-neutral-200 bg-neutral-50 px-2.5 py-0.5 text-[11px] font-medium text-neutral-600;
+  }
+  [data-theme='dark'] .badge-minimal {
+    @apply border-neutral-800 bg-neutral-900 text-neutral-400;
   }
 }
