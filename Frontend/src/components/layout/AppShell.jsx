@@ -11,7 +11,6 @@ import {
   FiChevronRight,
 } from 'react-icons/fi'
 import { useUser } from '../../context/useUser'
-import ThemeToggle from '../ThemeToggle'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/dashboard', icon: FiHome },
@@ -149,8 +148,6 @@ const AppShell = ({ children, title, subtitle, compactHeader = false }) => {
             </div>
 
             <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <div className="hidden h-4 w-px bg-neutral-200 dark:bg-neutral-800 sm:block" />
               <div className="hidden text-[11px] font-bold uppercase tracking-wider text-black dark:text-white sm:block">
                 {user?.name || 'Guest'}
               </div>

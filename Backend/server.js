@@ -21,15 +21,26 @@ const app = express();
 
 app.set("trust proxy", 1);
 
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    "https://ai-interview-preparation-pied.vercel.app",
+    "http://localhost:5173",
+].filter(Boolean);
 
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow non-browser tools (no origin header) and configured frontends.
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-app.use(
-    cors({
-        origin : "*",
-        methods :["GET" , "POST" , "PUT" , "DELETE"],
-        allowedHeaders : ["Content-Type" , "Authorization"],
-    })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 connectDB();
 

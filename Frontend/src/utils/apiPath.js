@@ -2,6 +2,7 @@ export const BASE_URL = 'https://ai-interview-preparation-uw13.onrender.com'
 
 
 
+
 export const API_PATH = {
     AUTH : {
         REGISTER : '/api/auth/register',

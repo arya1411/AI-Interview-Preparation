@@ -2,20 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { ThemeContext } from './themeContextObject'
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
+  const [theme] = useState('dark')
 
-  // Apply theme to <html> so [data-theme='dark'] CSS rules and Tailwind dark: classes work
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', 'dark')
   }, [theme])
 
-  const toggleTheme = () => {
-    setTheme((prev) => {
-      const nextTheme = prev === 'light' ? 'dark' : 'light'
-      localStorage.setItem('theme', nextTheme)
-      return nextTheme
-    })
-  }
+  const toggleTheme = () => {}
 
   const value = useMemo(() => ({ theme, toggleTheme }), [theme])
 
