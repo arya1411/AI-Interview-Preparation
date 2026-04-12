@@ -13,15 +13,17 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^1.48.0",
+    "axios": "^1.15.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
-    "express-rate-limit": "^7.5.0",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0",
     "groq-sdk": "^1.1.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "node-cron": "^4.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
