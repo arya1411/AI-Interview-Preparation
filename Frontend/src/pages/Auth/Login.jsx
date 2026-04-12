@@ -33,7 +33,7 @@ const LoginPage = () => {
 
   return (
     <main className="claude-home flex min-h-screen bg-white text-black dark:bg-neutral-950 dark:text-white">
-      {/* ── Left side (Branding) ── */}
+
       <div className="hidden w-1/2 flex-col justify-between border-r border-neutral-200 p-12 dark:border-neutral-800 lg:flex">
         <Link to="/" className="flex w-fit items-center gap-3">
           <FiSquare size={24} strokeWidth={2.5} />
