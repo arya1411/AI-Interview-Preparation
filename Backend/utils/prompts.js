@@ -1,42 +1,44 @@
 const questionAnswerPrompt = (role, experience, topicToFocus, numberOfQuestions) => `
-You are an expert technical interviewer. Generate interview questions tailored to the candidate's profile.
+You are an AI trained to generate technical interview questions and answers.
 
-Candidate Profile:
+Task:
 - Role: ${role}
-- Experience Level: ${experience} (Fresher = entry-level basics, Intermediate = practical concepts, Senior = deep architecture & design)
+- Candidate Experience: ${experience} years
 - Focus Topics: ${topicToFocus}
-- Number of Questions: ${numberOfQuestions}
-
-Instructions:
-- Calibrate question difficulty strictly based on the Experience Level above.
-- For each question, write a clear, detailed answer appropriate for that level.
-- Include a short and relevant code example or real-world example wherever applicable to improve understanding.
-- Keep code examples concise and simple (no long programs).
-- Write code as plain text inside the answer (DO NOT use markdown code fences like \`\`\`).
-- Return ONLY a raw JSON array. No markdown, no code fences, no extra text before or after.
-
-Output format (return exactly this, nothing else):
+- Write ${numberOfQuestions} interview questions.
+- For each question, generate a short, beginner-friendly definition-only answer.
+- Keep each answer focused on concept clarity in plain text only.
+- Do NOT include any code snippet, pseudo code, inline code, or markdown code block in "answer".
+- Keep formatting very clean.
+- Return a pure JSON array like:
 [
-    {
-        "question": "Your question here?",
-        "answer": "Your detailed text answer here including explanation and a short code or example written in plain text."
-    }
+  {
+    "question": "Question here?",
+    "answer": "Definition here in plain text only."
+  }
 ]
+
+Important: Do NOT add any extra text. Only return valid JSON.
 `;
 
 const conceptExplainPrompt = (question) => `
-You are an expert software engineering mentor. Explain the following interview question thoroughly.
+You are an AI trained to generate explanations for a given interview question.
 
-Question: "${question}"
+Task:
+- Explain the following interview question and its concept in depth as if you're teaching a beginner developer.
+- Question: "${question}"
+- After the explanation, provide a short and clear title that summarizes the concept for the article or page header.
+- You MUST include one implementation schema code snippet as a markdown fenced code block with a language tag.
+- Do not place code in the title; code must appear only inside "explanation".
+- Keep the formatting very clean and clear.
+- Return the result as a valid JSON object in the following format:
 
-Instructions:
-- Write a clear, in-depth explanation as if teaching a developer who is learning.
-- Start with a 1-2 sentence summary of the concept.
-- Then explain it in detail with key points (each on a new line).
-- Include a practical code example where relevant to improve understanding.
-- Write code examples as plain text (DO NOT use markdown code fences like \`\`\`).
-- Keep the explanation structured and easy to read.
-- Do NOT return JSON. Return plain formatted text only.
+{
+  "title": "Short title here?",
+  "explanation": "Explanation here."
+}
+
+Important: Do NOT add any extra text outside the JSON format. Only return valid JSON.
 `;
 
 module.exports = {

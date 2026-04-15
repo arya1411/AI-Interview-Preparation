@@ -74,8 +74,29 @@ const generateConceptExplanation = async (req, res) => {
         });
 
         const text = completion.choices[0]?.message?.content;
+        if (!text) {
+            return res.status(500).json({ message: "AI returned an empty explanation" });
+        }
 
-        res.status(200).json({ explanation: text });
+        // Prefer strict JSON shape from prompt, but gracefully fallback
+        // to raw text so existing frontend behavior keeps working.
+        let title = "";
+        let explanation = text;
+
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            try {
+                const parsed = JSON.parse(jsonMatch[0]);
+                if (parsed && typeof parsed === "object") {
+                    title = typeof parsed.title === "string" ? parsed.title : "";
+                    explanation = typeof parsed.explanation === "string" ? parsed.explanation : text;
+                }
+            } catch (_error) {
+                // Keep raw text fallback
+            }
+        }
+
+        res.status(200).json({ title, explanation });
 
     } catch (error) {
         res.status(500).json({

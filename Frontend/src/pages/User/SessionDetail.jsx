@@ -35,14 +35,88 @@ const splitExplanation = (text = '') => {
   }
 }
 
+const stripMarkdownCodeBlocks = (text = '') => text.replace(/```[\s\S]*?```/g, '').trim()
+
+const sanitizeCoreResponse = (text = '') => {
+  const withoutFencedCode = stripMarkdownCodeBlocks(text)
+
+  const inlineCodeStartRegex = /(?:^|[\s:([{])(?:const|let|var|function|class|import|export|require\s*\(|console\.log\s*\(|app\.(?:get|post|put|delete|listen)|SELECT|INSERT|UPDATE|DELETE|FROM|RUN|CMD|COPY|WORKDIR)\b/i
+
+  const isCodeLikeLine = (line = '') => {
+    const trimmed = line.trim()
+    if (!trimmed) return false
+
+    return /^(const|let|var|function|class|if|for|while|return|import|export|FROM|RUN|CMD|COPY|WORKDIR|def|print)\b/i.test(trimmed)
+      || /=>/.test(trimmed)
+      || /[{};`]/.test(trimmed)
+      || /\w+\s*\(.*\)\s*;?$/.test(trimmed)
+  }
+
+  let candidate = withoutFencedCode
+  const inlineMatch = inlineCodeStartRegex.exec(withoutFencedCode)
+  if (inlineMatch && typeof inlineMatch.index === 'number') {
+    candidate = withoutFencedCode.slice(0, inlineMatch.index).trim()
+  }
+
+  const lines = candidate.split(/\r?\n/)
+  const cleanedLines = []
+  for (const line of lines) {
+    if (isCodeLikeLine(line)) break
+    cleanedLines.push(line)
+  }
+
+  const cleanedText = cleanedLines.join('\n').replace(/\s+/g, ' ').trim()
+  return cleanedText || candidate || withoutFencedCode
+}
+
 const parseCodeBlocks = (text = '') => {
-  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g
+  const codeBlockRegex = /```([a-zA-Z0-9_+-]+)?\s*\r?\n([\s\S]*?)```/g
   const blocks = []
   let match = codeBlockRegex.exec(text)
 
   while (match) {
     blocks.push({ language: match[1] || 'javascript', code: match[2] || '' })
     match = codeBlockRegex.exec(text)
+  }
+
+  if (blocks.length > 0) {
+    return blocks
+  }
+
+  // Fallback for older/plain responses without markdown fences.
+  const lines = text.split(/\r?\n/)
+  const codeLikeLine = (line = '') => {
+    const trimmed = line.trim()
+    if (!trimmed) return false
+    if (/^[-*]\s+/.test(trimmed)) return false
+
+    return /^(const|let|var|function|class|if|for|while|return|import|export|FROM|RUN|CMD|COPY|WORKDIR|def|print|SELECT|INSERT|UPDATE|DELETE)\b/i.test(trimmed)
+      || /[{}();=<>\[\]]/.test(trimmed)
+  }
+
+  const fallbackLines = []
+  let hasStarted = false
+
+  for (const line of lines) {
+    if (codeLikeLine(line)) {
+      fallbackLines.push(line)
+      hasStarted = true
+      continue
+    }
+
+    if (hasStarted && line.trim() === '') {
+      fallbackLines.push(line)
+      continue
+    }
+
+    if (hasStarted) break
+  }
+
+  if (fallbackLines.length >= 2) {
+    const language = fallbackLines.some((line) => /^(FROM|RUN|CMD|COPY|WORKDIR)\b/i.test(line.trim()))
+      ? 'docker'
+      : 'javascript'
+    return [{ language, code: fallbackLines.join('\n').trim() }]
   }
 
   return blocks
@@ -141,6 +215,19 @@ const SessionDetail = () => {
     }
   }
 
+  const onRegenerateExplain = async (questionId, topic) => {
+    setLoadingExplain((prev) => ({ ...prev, [questionId]: true }))
+    try {
+      const { data } = await axiosInstance.post(API_PATH.AI.GENERATE_EXPLANATION, { topic })
+      setExplanations((prev) => ({ ...prev, [questionId]: data.explanation || 'No explanation available' }))
+      notifySuccess('Explanation regenerated')
+    } catch (error) {
+      notifyError(getErrorMessage(error, 'Could not regenerate explanation'))
+    } finally {
+      setLoadingExplain((prev) => ({ ...prev, [questionId]: false }))
+    }
+  }
+
   const onLearnMore = async (questionId, topic) => {
     if (!openQuestions[questionId]) {
       setOpenQuestions((prev) => ({ ...prev, [questionId]: true }))
@@ -189,29 +276,42 @@ const SessionDetail = () => {
   return (
     <AppShell title="Session Logs" subtitle={`ID: ${id?.slice(-8).toUpperCase()}`}>
       {/* ── Header Summary ── */}
-      <div className="mb-12 border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="flex flex-col items-start gap-8 p-10 md:flex-row md:items-center md:justify-between">
+      <div className="mb-10 rounded-2xl border border-neutral-800 bg-neutral-950/70 p-3">
+        <div className="flex flex-col items-start gap-6 rounded-xl border border-neutral-800 bg-neutral-950 px-6 py-7 md:flex-row md:items-stretch md:justify-between">
           <div>
             <p className="text-[10px] font-bold tracking-[0.2em] text-neutral-400 uppercase">
               OPERATIONAL_ROLE
             </p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-black dark:text-white uppercase">
+            <h2 className="mt-2 text-4xl font-extrabold tracking-tight text-white uppercase">
               {session?.role || '...'}
             </h2>
           </div>
 
-          <div className="flex flex-wrap gap-4">
-            <div className="border border-neutral-100 px-5 py-3 dark:border-neutral-900">
+          <div className="grid w-full gap-3 md:w-auto md:grid-cols-[minmax(260px,1fr)_minmax(130px,0.4fr)_minmax(130px,0.4fr)]">
+            <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-5 py-3">
               <p className="text-[9px] font-bold tracking-widest text-neutral-400 uppercase">Focus</p>
-              <p className="mt-1 text-xs font-bold text-black dark:text-white uppercase">{topics}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {String(topics)
+                  .split(',')
+                  .map((topic) => topic.trim())
+                  .filter(Boolean)
+                  .map((topic) => (
+                    <span
+                      key={topic}
+                      className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-[9px] font-bold tracking-wide text-neutral-200 uppercase"
+                    >
+                      {topic}
+                    </span>
+                  ))}
+              </div>
             </div>
-            <div className="border border-neutral-100 px-5 py-3 dark:border-neutral-900">
+            <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-5 py-3">
               <p className="text-[9px] font-bold tracking-widest text-neutral-400 uppercase">Exp</p>
-              <p className="mt-1 text-xs font-bold text-black dark:text-white uppercase">{experience}</p>
+              <p className="mt-1 text-xl font-extrabold text-white uppercase">{experience}</p>
             </div>
-            <div className="border border-neutral-100 px-5 py-3 dark:border-neutral-900">
+            <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-5 py-3">
               <p className="text-[9px] font-bold tracking-widest text-neutral-400 uppercase">Units</p>
-              <p className="mt-1 text-xs font-bold text-black dark:text-white uppercase">{questionCount} Q&A</p>
+              <p className="mt-1 text-xl font-extrabold text-white uppercase">{questionCount} Q&A</p>
             </div>
           </div>
         </div>
@@ -220,7 +320,7 @@ const SessionDetail = () => {
       {/* ── Question Log + Intel Panel ── */}
       <div className={`grid gap-6 ${learnMoreQuestionId ? 'xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.68fr)]' : 'grid-cols-1'}`}>
         <div>
-          <div className="space-y-px bg-neutral-100 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-900">
+          <div className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
           {(session?.questions || []).map((q, index) => {
             const isOpen = Boolean(openQuestions[q._id])
             const isIntelOpenForRow = learnMoreQuestionId === q._id
@@ -228,24 +328,24 @@ const SessionDetail = () => {
             return (
               <article
                 key={q._id || `${q.question}-${index}`}
-                className="bg-white dark:bg-neutral-950"
+                className="border-b border-neutral-800 bg-neutral-950 last:border-b-0"
               >
-                <div className="group p-8 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
+                <div className="group px-5 py-5 transition-colors hover:bg-neutral-900/60">
                   <button
                     type="button"
                     onClick={() => toggleQuestion(q._id)}
-                    className="flex flex-1 items-center gap-6 text-left"
+                    className="flex w-full items-center gap-4 text-left"
                   >
-                    <span className="text-xs font-bold tracking-widest text-neutral-300 dark:text-neutral-700">
+                    <span className="text-[11px] font-bold tracking-widest text-neutral-500">
                       {String(index + 1).padStart(2, '0')}
                     </span>
-                    <span className="flex-1 text-sm font-bold leading-tight tracking-tight text-black dark:text-white uppercase">
+                    <span className="flex-1 text-[15px] font-extrabold leading-tight tracking-tight text-white uppercase">
                       {q.question}
                     </span>
-                    <div className="flex shrink-0 items-center gap-4">
-                      {q.isPinned && <FiBookmark size={14} className="text-black dark:text-white" />}
-                      <span className="text-neutral-300 transition group-hover:text-black dark:group-hover:text-white">
-                        {isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+                    <div className="flex shrink-0 items-center gap-3">
+                      {q.isPinned && <FiBookmark size={14} className="text-neutral-100" />}
+                      <span className="text-neutral-500 transition group-hover:text-neutral-300">
+                        {isOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
                       </span>
                     </div>
                   </button>
@@ -260,14 +360,14 @@ const SessionDetail = () => {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className="border-t border-neutral-100 px-8 pb-10 pt-8 dark:border-neutral-900">
+                      <div className="border-t border-neutral-800 px-6 pb-8 pt-6">
                         <div className="mb-8 flex flex-wrap gap-4">
                           <button
                             onClick={() => onPinQuestion(q._id)}
                             className={`border px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition ${
                               q.isPinned
                                 ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                : 'border-neutral-200 text-neutral-500 hover:border-black hover:text-black dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white'
+                                : 'border-neutral-700 text-neutral-300 hover:border-white hover:text-white'
                             }`}
                           >
                             {q.isPinned ? 'Pinned' : 'Pin'}
@@ -278,7 +378,7 @@ const SessionDetail = () => {
                             className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition ${
                               isIntelOpenForRow
                                 ? 'border border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                : 'border border-neutral-200 text-neutral-700 hover:border-black hover:text-black dark:border-neutral-800 dark:text-neutral-300 dark:hover:border-white dark:hover:text-white'
+                                : 'border border-neutral-700 text-neutral-200 hover:border-white hover:text-white'
                             }`}
                           >
                             <FiCpu size={12} />
@@ -289,11 +389,11 @@ const SessionDetail = () => {
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="border border-neutral-100 bg-neutral-50 p-6 dark:border-neutral-900 dark:bg-neutral-900/50"
+                          className="border border-neutral-800 bg-neutral-900/30 p-6"
                         >
                           <p className="mb-4 text-[10px] font-bold tracking-widest text-neutral-400 uppercase">Core Response</p>
-                          <p className="text-sm font-medium leading-relaxed tracking-wide text-neutral-700 dark:text-neutral-300">
-                            {q.answer}
+                          <p className="text-sm font-medium leading-relaxed tracking-wide text-neutral-200">
+                            {sanitizeCoreResponse(q.answer)}
                           </p>
                         </motion.div>
 
@@ -301,7 +401,7 @@ const SessionDetail = () => {
                           <button
                             type="button"
                             onClick={() => openNoteDialog(q)}
-                            className="flex items-center gap-2 border border-neutral-200 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-neutral-600 transition hover:border-black hover:text-black dark:border-neutral-800 dark:text-neutral-300 dark:hover:border-white dark:hover:text-white"
+                            className="flex items-center gap-2 border border-neutral-700 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-neutral-300 transition hover:border-white hover:text-white"
                           >
                             <FiEdit3 size={12} />
                             Add Note
@@ -320,7 +420,7 @@ const SessionDetail = () => {
             <button
               onClick={onGenerateMore}
               disabled={generatingMore}
-              className="flex items-center gap-3 border border-black px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-black transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-3 border border-neutral-700 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-neutral-100 transition hover:border-white hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
             >
               {generatingMore ? 'Generating...' : 'Generate More'}
             </button>
@@ -345,6 +445,19 @@ const SessionDetail = () => {
                 <FiX size={14} />
               </button>
             </div>
+
+            {selectedIntelQuestion && (
+              <div className="mb-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => onRegenerateExplain(selectedIntelQuestion._id, selectedIntelQuestion.question)}
+                  disabled={selectedIntelLoading}
+                  className="border border-neutral-200 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-neutral-600 transition hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-800 dark:text-neutral-300 dark:hover:border-white dark:hover:text-white"
+                >
+                  {selectedIntelLoading ? 'Regenerating...' : 'Regenerate'}
+                </button>
+              </div>
+            )}
 
             {selectedIntelLoading && (
               <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Synthesizing analysis...</p>
