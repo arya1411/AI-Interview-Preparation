@@ -1,7 +1,10 @@
-const Groq = require("groq-sdk");
+const OpenAI = require("openai");
 const { questionAnswerPrompt, conceptExplainPrompt } = require("../utils/prompts");
 
-const getGroqClient = () => new Groq({ apiKey: process.env.GROQ_API_KEY });
+const getNVIDIAClient = () => new OpenAI({
+    baseURL: "https://integrate.api.nvidia.com/v1",
+    apiKey: process.env.NVIDIA_API_KEY,
+});
 
 const generateInterviewQuestions = async (req, res) => {
     try {
@@ -16,9 +19,9 @@ const generateInterviewQuestions = async (req, res) => {
         // Generate prompt
         const prompt = questionAnswerPrompt(role, candidateExperience, topicToFocus, numberOfQuestions);
 
-        // Call Groq
-        const completion = await getGroqClient().chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+        // Call NVIDIA NIM API
+        const completion = await getNVIDIAClient().chat.completions.create({
+            model: "nvidia/nemotron-3.5-lightning-30b-a3b",
             messages: [
                 {
                     role: "user",
@@ -26,6 +29,8 @@ const generateInterviewQuestions = async (req, res) => {
                 }
             ],
             temperature: 0.7,
+            top_p: 0.95,
+            max_tokens: 16384,
         });
 
         const rawText = completion.choices[0]?.message?.content;
@@ -62,8 +67,8 @@ const generateConceptExplanation = async (req, res) => {
 
         const prompt = conceptExplainPrompt(topic);
 
-        const completion = await getGroqClient().chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+        const completion = await getNVIDIAClient().chat.completions.create({
+            model: "nvidia/nemotron-3.5-lightning-30b-a3b",
             messages: [
                 {
                     role: "user",
@@ -71,6 +76,12 @@ const generateConceptExplanation = async (req, res) => {
                 }
             ],
             temperature: 0.7,
+            top_p: 0.95,
+            max_tokens: 16384,
+            extra_body: {
+                chat_template_kwargs: { enable_thinking: true },
+                reasoning_budget: 16384
+            }
         });
 
         const text = completion.choices[0]?.message?.content;
@@ -78,12 +89,17 @@ const generateConceptExplanation = async (req, res) => {
             return res.status(500).json({ message: "AI returned an empty explanation" });
         }
 
-        // Prefer strict JSON shape from prompt, but gracefully fallback
-        // to raw text so existing frontend behavior keeps working.
         let title = "";
         let explanation = text;
 
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        // Strip markdown code fences the model sometimes wraps around JSON
+        const cleaned = text
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```\s*$/i, "")
+            .trim();
+
+        // Extract the outermost JSON object
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             try {
                 const parsed = JSON.parse(jsonMatch[0]);
@@ -92,7 +108,7 @@ const generateConceptExplanation = async (req, res) => {
                     explanation = typeof parsed.explanation === "string" ? parsed.explanation : text;
                 }
             } catch (_error) {
-                // Keep raw text fallback
+                // JSON parse failed — fall through to raw text fallback
             }
         }
 

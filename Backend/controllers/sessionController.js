@@ -32,7 +32,7 @@ exports.createSession = async (req , res ) => {
         const session = await Session.create ({
             user : userId,
             role,
-            experince: experince || experience,
+            experience: experince || experience,
             topicsToFocus: topicsToFocus || topicToFocus,
             description,
         });
@@ -108,7 +108,7 @@ exports.deleteSession = async (req , res ) => {
         }
 
 
-        if(session.user.toString() !== req.user.id){
+        if(session.user.toString() !== req.user._id.toString()){
             return res
                 .status(401)
                 .json({message :"Not Authorized to delete this Session"});
@@ -122,5 +122,24 @@ exports.deleteSession = async (req , res ) => {
 
     } catch(error){
         return res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    }
+};
+
+
+exports.completeSession = async (req, res) => {
+    try {
+        const session = await Session.findById(req.params.id);
+        if (!session) return res.status(404).json({ success: false, message: "Session not found" });
+        if (session.user.toString() !== req.user._id.toString()) return res.status(403).json({ success: false, message: "Not authorized" });
+        if (session.status === "completed") return res.status(400).json({ success: false, message: "Session already completed" });
+        const now = new Date();
+        session.status = "completed";
+        session.totalDuration = now.getTime() - session.createdAt.getTime();
+        session.questionCount = session.questions.length;
+        session.completionDate = now;
+        await session.save();
+        return res.status(200).json({ success: true, session });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 };

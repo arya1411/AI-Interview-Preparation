@@ -27,7 +27,7 @@ PrepAI is a full-stack interview preparation platform that generates role-specif
 - MongoDB + Mongoose
 - JWT + bcrypt authentication
 - Multer for file uploads
-- Groq API for AI generation
+- NVIDIA NIM API (Nemotron 3.5 Lightning 30B) for AI generation
 - express-rate-limit for layered throttling
 
 ## Repository Structure
@@ -113,7 +113,7 @@ All limit responses return HTTP `429` with a user-friendly message and `retryAft
 - Node.js 18+
 - npm 9+
 - MongoDB Atlas URI (or local MongoDB)
-- Groq API key
+- NVIDIA NIM API key (Get from https://build.nvidia.com/)
 
 ### 1) Install dependencies
 
@@ -133,8 +133,10 @@ Create `Backend/.env`:
 MONGO_URL=your_mongodb_connection_string
 JWT_SECRET=your_strong_jwt_secret
 PORT=8000
-GROQ_API_KEY=your_groq_api_key
+NVIDIA_API_KEY=your_nvidia_nim_api_key
 ```
+
+Get your NVIDIA API key from https://build.nvidia.com/ after creating an account.
 
 ### 3) Run backend
 

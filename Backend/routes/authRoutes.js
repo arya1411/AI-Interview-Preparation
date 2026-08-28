@@ -1,16 +1,15 @@
 const express = require("express");
 
-const {registerUser , loginUser , getUserProfile } = require("../controllers/authController");
-const {protect} = require("../middlewares/authMiddleware");
+const { registerUser, loginUser, getUserProfile, googleAuth } = require("../controllers/authController");
+const { protect } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/uploadMiddleware");
-
 
 const router = express.Router();
 
-
-router.post("/register" ,registerUser);
-router.post("/login" , loginUser);
-router.get("/profile" , protect , getUserProfile);
+router.post("/register", registerUser);
+router.post("/login", loginUser);
+router.post("/google", googleAuth);
+router.get("/profile", protect, getUserProfile);
 
 router.post("/upload-image", (req, res) => {
     upload.single("image")(req, res, (error) => {

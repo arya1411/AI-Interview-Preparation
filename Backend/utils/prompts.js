@@ -1,44 +1,67 @@
 const questionAnswerPrompt = (role, experience, topicToFocus, numberOfQuestions) => `
-You are an AI trained to generate technical interview questions and answers.
+You are an expert technical interviewer specializing in ${role} positions. Generate high-quality interview questions tailored to the candidate's experience level.
 
-Task:
-- Role: ${role}
+Context:
+- Target Role: ${role}
 - Candidate Experience: ${experience} years
 - Focus Topics: ${topicToFocus}
-- Write ${numberOfQuestions} interview questions.
-- For each question, generate a short, beginner-friendly definition-only answer.
-- Keep each answer focused on concept clarity in plain text only.
-- Do NOT include any code snippet, pseudo code, inline code, or markdown code block in "answer".
-- Keep formatting very clean.
-- Return a pure JSON array like:
+- Number of Questions: ${numberOfQuestions}
+
+Requirements:
+1. Generate ${numberOfQuestions} technical interview questions appropriate for the experience level
+2. Each question should be clear, specific, and relevant to the focus topics
+3. Provide concise, beginner-friendly answers that focus on core concepts
+4. Answers must be in plain text only - NO code snippets, NO pseudo-code, NO markdown code blocks
+5. Ensure questions progress from fundamental to more advanced concepts
+6. Include practical scenarios where applicable
+
+Output Format:
+Return ONLY a valid JSON array with this exact structure:
 [
   {
-    "question": "Question here?",
-    "answer": "Definition here in plain text only."
+    "question": "Clear, specific interview question",
+    "answer": "Concise definition-focused answer in plain text"
   }
 ]
 
-Important: Do NOT add any extra text. Only return valid JSON.
+Critical Rules:
+- Return ONLY the JSON array, no additional text
+- Do NOT wrap in markdown code fences (\`\`\`)
+- Ensure all JSON is valid and properly formatted
+- Each answer should be 2-3 sentences maximum
+- Focus on conceptual understanding, not implementation details
 `;
 
 const conceptExplainPrompt = (question) => `
-You are an AI trained to generate explanations for a given interview question.
+You are an expert technical educator specializing in explaining complex programming concepts to developers. Provide a comprehensive, beginner-friendly explanation for the given interview question.
 
-Task:
-- Explain the following interview question and its concept in depth as if you're teaching a beginner developer.
-- Question: "${question}"
-- After the explanation, provide a short and clear title that summarizes the concept for the article or page header.
-- You MUST include one implementation schema code snippet as a markdown fenced code block with a language tag.
-- Do not place code in the title; code must appear only inside "explanation".
-- Keep the formatting very clean and clear.
-- Return the result as a valid JSON object in the following format:
+Question: "${question}"
 
+Instructions:
+1. Create a concise, descriptive title that summarizes the core concept (2-6 words)
+2. Write a detailed explanation (4-6 paragraphs) that:
+   - Starts with a simple analogy or real-world comparison
+   - Explains the "what" - what the concept is
+   - Explains the "why" - why it matters in practice
+   - Explains the "how" - how it's typically used
+   - Covers common pitfalls or best practices
+3. Include exactly one practical, well-commented code example in a markdown fenced code block with appropriate language tag
+4. Ensure the explanation builds understanding progressively from basic to advanced
+
+Output Format:
+Return ONLY a raw JSON object with this exact structure:
 {
-  "title": "Short title here?",
-  "explanation": "Explanation here."
+  "title": "Concise concept title",
+  "explanation": "Full multi-paragraph explanation with embedded code block like:\\n\\nStart with analogy...\\n\\n\`\`\`language\\n// Practical code example\\nconst example = 'value';\\n\`\`\`\\n\\nContinue explanation after code..."
 }
 
-Important: Do NOT add any extra text outside the JSON format. Only return valid JSON.
+Critical Rules:
+- Return ONLY the raw JSON object, no markdown fences
+- Start response with { and end with }
+- No extra text before or after the JSON
+- Code block must use proper markdown fencing with language tag
+- Explanation should be thorough but accessible to beginners
+- Leverage reasoning capabilities to provide deep, accurate explanations
 `;
 
 module.exports = {

@@ -71,12 +71,12 @@ const loginUser = async (req , res) => {
 
         const user = await User.findOne({email});
         if(!user){
-            return res.status(500).json({message : "Invalid Email or Password"});
+            return res.status(401).json({message : "Invalid Email or Password"});
         }
 
         const isMatch = await bcrypt.compare(password , user.password);
         if(!isMatch) {
-            return res.status(500).json({message : "Invalid Id and Password"});
+            return res.status(401).json({message : "Invalid Email or Password"});
         }
 
 
@@ -110,4 +110,60 @@ const getUserProfile = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+const googleAuth = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({ message: "Firebase ID token is required" });
+        }
+
+        // Verify the token with Firebase Admin
+        const admin = require("../config/firebase");
+        if (!admin) {
+            return res.status(503).json({ message: "Google auth is not configured yet" });
+        }
+        const decoded = await admin.auth().verifyIdToken(idToken);
+
+        const { uid, email, name, picture } = decoded;
+
+        if (!email) {
+            return res.status(400).json({ message: "No email associated with this Google account" });
+        }
+
+        // Find existing user by email or googleId, or create a new one
+        let user = await User.findOne({ $or: [{ email }, { googleId: uid }] });
+
+        if (user) {
+            // Link googleId if this email already exists from email/password signup
+            if (!user.googleId) {
+                user.googleId = uid;
+                if (!user.profileImageUrl && picture) user.profileImageUrl = picture;
+                await user.save();
+            }
+        } else {
+            // Brand new user via Google
+            user = await User.create({
+                name: name || email.split("@")[0],
+                email,
+                googleId: uid,
+                profileImageUrl: picture || null,
+                password: null,
+            });
+        }
+
+        res.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            profileImageUrl: user.profileImageUrl,
+            token: generateToken(user._id),
+        });
+
+    } catch (error) {
+        console.error("Google auth error:", error.message);
+        res.status(401).json({ message: "Invalid or expired Google token", error: error.message });
+    }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, googleAuth };

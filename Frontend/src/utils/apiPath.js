@@ -1,4 +1,4 @@
-export const BASE_URL = 'https://ai-interview-preparation-uw13.onrender.com'
+export const BASE_URL = 'http://localhost:8000'
 
 
 
@@ -7,6 +7,7 @@ export const API_PATH = {
     AUTH : {
         REGISTER : '/api/auth/register',
         LOGIN : '/api/auth/login',
+        GOOGLE : '/api/auth/google',
         GET_PROFILE : '/api/auth/profile'
     },
 
@@ -24,7 +25,12 @@ export const API_PATH = {
         CREATE : '/api/sessions/create',
         GET_ALL : '/api/sessions/my-sessions',
         GET_ONE :(id) => `/api/sessions/${id}`,
-        DELETE : (id) => `/api/sessions/${id}`
+        DELETE : (id) => `/api/sessions/${id}`,
+        COMPLETE : (id) => `/api/sessions/complete/${id}`
+    },
+    ANALYTICS : {
+        GET : '/api/analytics',
+        GET_WEAK_TOPICS : '/api/analytics/weak-topics'
     },
     IMAGE :{
         UPLOAD_IMAGE : '/api/auth/upload-image',
