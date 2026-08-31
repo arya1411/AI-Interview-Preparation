@@ -4,7 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const axios = require("axios");
 const cron = require("node-cron");
-const connectDB = require("./config/db");
+const { connectDB } = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const { protect } = require("./middlewares/authMiddleware");
 const sessionRoute = require('./routes/sessionRoutes');
@@ -18,9 +18,11 @@ const {
     aiDailyLimiter,
 } = require("./middlewares/rateLimiters");
 
+
+
 const app = express();
 
-app.set("trust proxy", 1);
+
 
 const corsOptions = {
     // Reflect request origin to avoid wildcard-related browser edge cases on preflight.

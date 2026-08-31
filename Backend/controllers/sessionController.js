@@ -4,6 +4,11 @@ const Question = require("../models/Question");
 
 
 
+const serializeSession = (session) => {
+    const plain = session && typeof session.toJSON === 'function' ? session.toJSON() : session;
+    return plain ? { ...plain, _id: plain._id ?? plain.id } : plain;
+};
+
 exports.createSession = async (req , res ) => {
     try {
         if (!req.body || typeof req.body !== "object") {
@@ -27,80 +32,78 @@ exports.createSession = async (req , res ) => {
             });
         }
 
-        const userId = req.user._id;
+        const userId = req.user.id;
 
         const session = await Session.create ({
-            user : userId,
+            userId : userId,
             role,
             experience: experince || experience,
             topicsToFocus: topicsToFocus || topicToFocus,
             description,
         });
 
-        const questionDocs = await Promise.all(
+        await Promise.all(
             questions.map(async (q) => {
-                const createdQuestion = await Question.create({
-                    session: session._id,
+                await Question.create({
+                    sessionId: session.id,
                     question: q.question,
                     answer: q.answer,
                 });
-                return createdQuestion._id;
             })
         );
 
-        session.questions = questionDocs;
-        await session.save();
-
-        return res.status(201).json({ success: true, session });
+        return res.status(201).json({ success: true, session: serializeSession(session) });
 
     } catch(error){
         return res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
-
-
 
 
 exports.getMySession = async (req , res ) => {
     try {
-        const sessions = await Session.find({user : req.user._id})
-            .sort({createdAt : -1})
-            .populate("questions");
-        return res.status(200).json({ success: true, sessions });
+        const sessions = await Session.findAll({
+            where: { userId: req.user.id },
+            order: [['createdAt', 'DESC']],
+            include: [{
+                model: Question,
+                as: 'questions',
+                order: [['isPinned', 'DESC'], ['createdAt', 'ASC']]
+            }]
+        });
+        return res.status(200).json({ success: true, sessions: sessions.map(serializeSession) });
     } catch(error){
         return res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
-
-
 
 
 exports.getSessionById = async (req , res ) => {
     try {
-        const session = await Session.findById(req.params.id)
-        .populate({
-            path : "questions",
-            options : {sort : {isPinned : -1 , createdAt : 1 } }, 
-        })
-        .exec();
+        const session = await Session.findByPk(req.params.id, {
+            include: [{
+                model: Question,
+                as: 'questions',
+                order: [['isPinned', 'DESC'], ['createdAt', 'ASC']]
+            }]
+        });
+        
         if (!session) {
             return res.status(404).json({ success: false, message: "Session Not Found" });
         }
 
-        return res.status(200).json({ success: true, session });
+        return res.status(200).json({ success: true, session: serializeSession(session) });
 
     } catch(error){
         return res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
-
-
 
 
 exports.deleteSession = async (req , res ) => {
     try {
 
-        const session = await Session.findById(req.params.id);
+        const session = await Session.findByPk(req.params.id);
 
 
         if(!session) {
@@ -108,15 +111,15 @@ exports.deleteSession = async (req , res ) => {
         }
 
 
-        if(session.user.toString() !== req.user._id.toString()){
+        if(session.userId !== req.user.id){
             return res
                 .status(401)
                 .json({message :"Not Authorized to delete this Session"});
         }
 
-        await Question.deleteMany({session : session._id});
+        await Question.destroy({where: { sessionId: session.id }});
 
-        await session.deleteOne();
+        await session.destroy();
 
         return res.status(200).json({ success: true, message : "Session Deleted Successfully" });
 
@@ -128,14 +131,14 @@ exports.deleteSession = async (req , res ) => {
 
 exports.completeSession = async (req, res) => {
     try {
-        const session = await Session.findById(req.params.id);
+        const session = await Session.findByPk(req.params.id);
         if (!session) return res.status(404).json({ success: false, message: "Session not found" });
-        if (session.user.toString() !== req.user._id.toString()) return res.status(403).json({ success: false, message: "Not authorized" });
+        if (session.userId !== req.user.id) return res.status(403).json({ success: false, message: "Not authorized" });
         if (session.status === "completed") return res.status(400).json({ success: false, message: "Session already completed" });
         const now = new Date();
         session.status = "completed";
         session.totalDuration = now.getTime() - session.createdAt.getTime();
-        session.questionCount = session.questions.length;
+        session.questionCount = session.questions ? session.questions.length : 0;
         session.completionDate = now;
         await session.save();
         return res.status(200).json({ success: true, session });

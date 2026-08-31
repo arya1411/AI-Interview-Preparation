@@ -1,10 +1,81 @@
-const OpenAI = require("openai");
+const Groq = require("groq-sdk");
 const { questionAnswerPrompt, conceptExplainPrompt } = require("../utils/prompts");
 
-const getNVIDIAClient = () => new OpenAI({
-    baseURL: "https://integrate.api.nvidia.com/v1",
-    apiKey: process.env.NVIDIA_API_KEY,
+const GROQ_MODEL = "qwen/qwen3.8-27b";
+
+const getGroqClient = () => new Groq({
+    apiKey: process.env.GROQ_API_KEY,
 });
+
+const extractJsonArray = (text) => {
+    if (!text || typeof text !== "string") return null;
+
+    try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed;
+    } catch (_error) {
+        // ignore and fallback to extraction
+    }
+
+    const firstOpen = text.indexOf("[");
+    const lastClose = text.lastIndexOf("]");
+    if (firstOpen !== -1 && lastClose > firstOpen) {
+        const candidate = text.slice(firstOpen, lastClose + 1);
+        try {
+            const parsed = JSON.parse(candidate);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (_error) {
+            // ignore and fallback to regex extraction
+        }
+    }
+
+    const match = text.match(/\[[\s\S]*\]/);
+    if (match) {
+        try {
+            const parsed = JSON.parse(match[0]);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (_error) {
+            // ignore
+        }
+    }
+
+    return null;
+};
+
+const extractJsonObject = (text) => {
+    if (!text || typeof text !== "string") return null;
+
+    try {
+        const parsed = JSON.parse(text);
+        if (parsed && typeof parsed === "object") return parsed;
+    } catch (_error) {
+        // ignore and fallback
+    }
+
+    const firstOpen = text.indexOf("{");
+    const lastClose = text.lastIndexOf("}");
+    if (firstOpen !== -1 && lastClose > firstOpen) {
+        const candidate = text.slice(firstOpen, lastClose + 1);
+        try {
+            const parsed = JSON.parse(candidate);
+            if (parsed && typeof parsed === "object") return parsed;
+        } catch (_error) {
+            // ignore
+        }
+    }
+
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) {
+        try {
+            const parsed = JSON.parse(match[0]);
+            if (parsed && typeof parsed === "object") return parsed;
+        } catch (_error) {
+            // ignore
+        }
+    }
+
+    return null;
+};
 
 const generateInterviewQuestions = async (req, res) => {
     try {
@@ -19,9 +90,9 @@ const generateInterviewQuestions = async (req, res) => {
         // Generate prompt
         const prompt = questionAnswerPrompt(role, candidateExperience, topicToFocus, numberOfQuestions);
 
-        // Call NVIDIA NIM API
-        const completion = await getNVIDIAClient().chat.completions.create({
-            model: "nvidia/nemotron-3.5-lightning-30b-a3b",
+        // Call Groq API
+        const completion = await getGroqClient().chat.completions.create({
+            model: GROQ_MODEL,
             messages: [
                 {
                     role: "user",
@@ -30,7 +101,7 @@ const generateInterviewQuestions = async (req, res) => {
             ],
             temperature: 0.7,
             top_p: 0.95,
-            max_tokens: 16384,
+            max_tokens: 2048,
         });
 
         const rawText = completion.choices[0]?.message?.content;
@@ -39,20 +110,37 @@ const generateInterviewQuestions = async (req, res) => {
             return res.status(500).json({ message: "AI returned an empty response" });
         }
 
-        // Extract JSON array robustly
-        const match = rawText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-        if (!match) {
+        const data = extractJsonArray(rawText);
+        if (!data) {
             return res.status(500).json({ message: "AI did not return a valid JSON array" });
         }
 
-        const data = JSON.parse(match[0]);
+        const normalized = data
+            .map((item) => {
+                const question = typeof item?.question === "string" ? item.question : "";
+                const answer = typeof item?.answer === "string"
+                    ? item.answer
+                    : typeof item?.expected_answer === "string"
+                        ? item.expected_answer
+                        : "";
 
-        res.status(200).json(data);
+                if (!question || !answer) return null;
+                return { question, answer };
+            })
+            .filter(Boolean);
+
+        if (!normalized.length) {
+            return res.status(500).json({ message: "AI did not return usable question data" });
+        }
+
+        res.status(200).json(normalized);
 
     } catch (error) {
-        res.status(500).json({
-            message: "Failed To Generate Question",
-            error: error.message
+        const status = error?.status || error?.response?.status || 500;
+        const message = error?.message || "Unknown AI generation error";
+        res.status(status === 404 ? 502 : 500).json({
+            message: status === 404 ? "Groq model unavailable for this account" : "Failed To Generate Question",
+            error: message
         });
     }
 };
@@ -67,8 +155,8 @@ const generateConceptExplanation = async (req, res) => {
 
         const prompt = conceptExplainPrompt(topic);
 
-        const completion = await getNVIDIAClient().chat.completions.create({
-            model: "nvidia/nemotron-3.5-lightning-30b-a3b",
+        const completion = await getGroqClient().chat.completions.create({
+            model: GROQ_MODEL,
             messages: [
                 {
                     role: "user",
@@ -77,11 +165,7 @@ const generateConceptExplanation = async (req, res) => {
             ],
             temperature: 0.7,
             top_p: 0.95,
-            max_tokens: 16384,
-            extra_body: {
-                chat_template_kwargs: { enable_thinking: true },
-                reasoning_budget: 16384
-            }
+            max_tokens: 1024,
         });
 
         const text = completion.choices[0]?.message?.content;
@@ -92,32 +176,25 @@ const generateConceptExplanation = async (req, res) => {
         let title = "";
         let explanation = text;
 
-        // Strip markdown code fences the model sometimes wraps around JSON
         const cleaned = text
             .replace(/^```(?:json)?\s*/i, "")
             .replace(/\s*```\s*$/i, "")
             .trim();
 
-        // Extract the outermost JSON object
-        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            try {
-                const parsed = JSON.parse(jsonMatch[0]);
-                if (parsed && typeof parsed === "object") {
-                    title = typeof parsed.title === "string" ? parsed.title : "";
-                    explanation = typeof parsed.explanation === "string" ? parsed.explanation : text;
-                }
-            } catch (_error) {
-                // JSON parse failed — fall through to raw text fallback
-            }
+        const parsed = extractJsonObject(cleaned);
+        if (parsed && typeof parsed === "object") {
+            title = typeof parsed.title === "string" ? parsed.title : "";
+            explanation = typeof parsed.explanation === "string" ? parsed.explanation : text;
         }
 
         res.status(200).json({ title, explanation });
 
     } catch (error) {
-        res.status(500).json({
-            message: "Failed To Generate Explanation",
-            error: error.message
+        const status = error?.status || error?.response?.status || 500;
+        const message = error?.message || "Unknown AI generation error";
+        res.status(status === 404 ? 502 : 500).json({
+            message: status === 404 ? "Groq model unavailable for this account" : "Failed To Generate Explanation",
+            error: message
         });
     }
 };

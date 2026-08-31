@@ -10,7 +10,8 @@ export const normalizeQuestions = (questions) =>
   questions
     .filter((q) => q?.question)
     .map((q) => ({
-      _id: q._id,
+      _id: q._id ?? q.id,
+      id: q.id ?? q._id,
       question: q.question,
       answer: q.answer || '',
       note: q.note || '',

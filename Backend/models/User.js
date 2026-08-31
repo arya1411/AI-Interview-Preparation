@@ -1,16 +1,38 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const UserSchema = new mongoose.Schema(
-    {
-        name: { type: String, required: true },
-        email: { type: String, required: true, unique: true },
-        // Optional — Google OAuth users won't have a password
-        password: { type: String, default: null },
-        profileImageUrl: { type: String, default: null },
-        // Populated for Google OAuth users
-        googleId: { type: String, default: null },
+const User = sequelize.define('User', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
     },
-    { timestamps: true }
-);
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    profileImageUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    googleId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+}, {
+    timestamps: true,
+});
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = User;

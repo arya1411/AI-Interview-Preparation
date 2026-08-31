@@ -1,23 +1,18 @@
+import moment from 'moment'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FiPlus,
-  FiTrash2,
-  FiArrowRight,
-  FiClock,
-  FiLayers,
-  FiTarget,
-  FiBriefcase,
+    FiArrowRight,
+    FiPlus,
+    FiTrash2
 } from 'react-icons/fi'
-import axiosInstance from '../../utils/axiosInstance'
-import { API_PATH } from '../../utils/apiPath'
-import { getErrorMessage, normalizeQuestions, parseQuestionsResponse } from '../../utils/helper'
-import { notifyError, notifySuccess } from '../../utils/toast'
+import { useNavigate } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import Modal from '../../components/Modal'
-import moment from 'moment'
+import { API_PATH } from '../../utils/apiPath'
+import axiosInstance from '../../utils/axiosInstance'
+import { getErrorMessage, normalizeQuestions, parseQuestionsResponse } from '../../utils/helper'
 import { roles } from '../../utils/roles'
+import { notifyError, notifySuccess } from '../../utils/toast'
 
 const HomeDashboard = () => {
   const navigate = useNavigate()
@@ -70,7 +65,7 @@ const HomeDashboard = () => {
         questions: generated,
       })
 
-      const createdId = sessionData?.session?._id
+      const createdId = sessionData?.session?._id ?? sessionData?.session?.id
       notifySuccess('New session created')
       setShowCreateModal(false)
       fetchSessions()
@@ -89,7 +84,7 @@ const HomeDashboard = () => {
     try {
       await axiosInstance.delete(API_PATH.SESSION.DELETE(id))
       notifySuccess('Session deleted')
-      setSessions((prev) => prev.filter((session) => session._id !== id))
+      setSessions((prev) => prev.filter((session) => (session?._id ?? session?.id) !== id))
     } catch (error) {
       notifyError(getErrorMessage(error, 'Could not delete session'))
     }
@@ -136,10 +131,11 @@ const HomeDashboard = () => {
           const totalQA = session?.questions?.length || 0
           const topics = session.topicsToFocus || session.topicToFocus || '—'
           const experience = session.experince || session.experience || '—'
+          const sessionId = session?._id ?? session?.id
 
           return (
             <article
-              key={session._id}
+              key={sessionId}
               className="group border border-neutral-100 bg-white p-8 transition-colors hover:bg-neutral-50 dark:border-neutral-900 dark:bg-neutral-950 dark:hover:bg-neutral-900"
             >
               <div className="flex items-start justify-between gap-4">
@@ -153,7 +149,7 @@ const HomeDashboard = () => {
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <button
-                    onClick={() => onDeleteSession(session._id)}
+                    onClick={() => onDeleteSession(sessionId)}
                     className="grid h-8 w-8 place-items-center border border-neutral-200 text-neutral-400 transition hover:border-black hover:text-black dark:border-neutral-800 dark:hover:border-white dark:hover:text-white"
                   >
                     <FiTrash2 size={12} />
@@ -177,7 +173,7 @@ const HomeDashboard = () => {
               </div>
 
               <button
-                onClick={() => navigate(`/session/${session._id}`)}
+                onClick={() => navigate(`/session/${sessionId}`)}
                 className="mt-10 flex w-full items-center justify-between border border-black px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-black transition hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
               >
                 Launch Session

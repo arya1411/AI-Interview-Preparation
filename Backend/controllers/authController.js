@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { Op } = require('sequelize');
 const User = require("../models/User");
 
 
@@ -27,7 +28,7 @@ const registerUser = async(req , res) => {
             return res.status(400).json({ message: "Password must be at least 6 characters" });
         }
 
-        const userExists = await User.findOne({email});
+        const userExists = await User.findOne({where: {email}});
 
         if(userExists){
             return res.status(400).json({message : "User already exists"});
@@ -45,11 +46,12 @@ const registerUser = async(req , res) => {
         });
 
         res.status(201).json({
-            _id : user._id,
+            _id : user.id,
             name : user.name,
             email : user.email,
             profileImageUrl : user.profileImageUrl,
-            token : generateToken(user._id) , 
+            token : generateToken(user.id) ,
+            id: user.id,
         });
     } catch(error){
         res.status(500).json({message : "Server Error" , error : error.message});
@@ -69,7 +71,7 @@ const loginUser = async (req , res) => {
 
         const {email , password } = req.body;
 
-        const user = await User.findOne({email});
+        const user = await User.findOne({where: {email}});
         if(!user){
             return res.status(401).json({message : "Invalid Email or Password"});
         }
@@ -81,11 +83,12 @@ const loginUser = async (req , res) => {
 
 
         res.json({
-            _id : user._id,
+            _id : user.id,
             name : user.name,
             email : user.email,
             profileImageUrl : user.profileImageUrl,
-            token : generateToken(user._id),
+            token : generateToken(user.id),
+            id: user.id,
         });
     } catch(error){
         res.status(500).json({message :"Server Error" , error : error.message});
@@ -100,7 +103,7 @@ const getUserProfile = async (req, res) => {
         }
 
         res.json({
-            _id: req.user._id,
+            _id: req.user.id,
             name: req.user.name,
             email: req.user.email,
             profileImageUrl: req.user.profileImageUrl,
@@ -132,7 +135,7 @@ const googleAuth = async (req, res) => {
         }
 
         // Find existing user by email or googleId, or create a new one
-        let user = await User.findOne({ $or: [{ email }, { googleId: uid }] });
+        let user = await User.findOne({where: {[Op.or]: [{ email }, { googleId: uid }]}});
 
         if (user) {
             // Link googleId if this email already exists from email/password signup
@@ -153,11 +156,12 @@ const googleAuth = async (req, res) => {
         }
 
         res.status(200).json({
-            _id: user._id,
+            _id: user.id,
             name: user.name,
             email: user.email,
             profileImageUrl: user.profileImageUrl,
-            token: generateToken(user._id),
+            token: generateToken(user.id),
+            id: user.id,
         });
 
     } catch (error) {

@@ -1,15 +1,46 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
+const Question = sequelize.define('Question', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    sessionId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'Sessions',
+            key: 'id',
+        },
+    },
+    question: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    answer: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    note: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    isPinned: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+}, {
+    timestamps: true,
+});
 
-const questionSchema = new mongoose.Schema({
-    session : {type : mongoose.Schema.Types.ObjectId , ref : "Session"},
-    question : String ,
-    answer : String ,
-    note : String ,
-    isPinned : {type : Boolean , default : false},
-} , 
-{timestamps : true});
+// Define associations
+Question.associate = (models) => {
+    Question.belongsTo(models.Session, {
+        foreignKey: 'sessionId',
+        as: 'session',
+    });
+};
 
-
-
-module.exports = mongoose.model("Question" , questionSchema);
+module.exports = Question;

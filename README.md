@@ -113,7 +113,7 @@ All limit responses return HTTP `429` with a user-friendly message and `retryAft
 - Node.js 18+
 - npm 9+
 - MongoDB Atlas URI (or local MongoDB)
-- NVIDIA NIM API key (Get from https://build.nvidia.com/)
+- Groq free-tier API key from https://console.groq.com/keys
 
 ### 1) Install dependencies
 
@@ -133,10 +133,10 @@ Create `Backend/.env`:
 MONGO_URL=your_mongodb_connection_string
 JWT_SECRET=your_strong_jwt_secret
 PORT=8000
-NVIDIA_API_KEY=your_nvidia_nim_api_key
+GROQ_API_KEY=your_groq_api_key
 ```
 
-Get your NVIDIA API key from https://build.nvidia.com/ after creating an account.
+Create a free Groq API key in the Groq Console and add it to the backend environment. The app uses the model currently available on the key: `qwen/qwen3.8-27b`.
 
 ### 3) Run backend
 

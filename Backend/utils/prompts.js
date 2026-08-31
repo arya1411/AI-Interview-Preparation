@@ -1,67 +1,47 @@
 const questionAnswerPrompt = (role, experience, topicToFocus, numberOfQuestions) => `
-You are an expert technical interviewer specializing in ${role} positions. Generate high-quality interview questions tailored to the candidate's experience level.
+You are an expert technical interviewer for ${role} roles.
 
-Context:
-- Target Role: ${role}
-- Candidate Experience: ${experience} years
-- Focus Topics: ${topicToFocus}
-- Number of Questions: ${numberOfQuestions}
+Generate exactly ${numberOfQuestions} interview questions for a candidate with ${experience} years of experience.
+Focus areas: ${topicToFocus}
 
-Requirements:
-1. Generate ${numberOfQuestions} technical interview questions appropriate for the experience level
-2. Each question should be clear, specific, and relevant to the focus topics
-3. Provide concise, beginner-friendly answers that focus on core concepts
-4. Answers must be in plain text only - NO code snippets, NO pseudo-code, NO markdown code blocks
-5. Ensure questions progress from fundamental to more advanced concepts
-6. Include practical scenarios where applicable
+Rules:
+1. Return ONLY a valid JSON array, no prose, no explanation, no markdown fences.
+2. The response must be parseable with JSON.parse().
+3. Every item must have exactly this shape and no extra keys:
+   { "question": "...", "answer": "..." }
+4. Never add fields like "id", "expected_answer", "difficulty", or "explanation".
+5. Questions must be specific, realistic, and technically relevant.
+6. Answers must be plain text, 2-3 sentences max, beginner-friendly and concise.
+7. No code blocks, no pseudo-code, no bullet lists, no extra keys.
+8. Do not include reasoning, headings, comments, or text outside the JSON array.
+9. Ensure the output starts with [ and ends with ].
 
-Output Format:
-Return ONLY a valid JSON array with this exact structure:
+Example output:
 [
-  {
-    "question": "Clear, specific interview question",
-    "answer": "Concise definition-focused answer in plain text"
-  }
+  { "question": "What is Docker?", "answer": "Docker packages an application and its dependencies into a portable container..." }
 ]
-
-Critical Rules:
-- Return ONLY the JSON array, no additional text
-- Do NOT wrap in markdown code fences (\`\`\`)
-- Ensure all JSON is valid and properly formatted
-- Each answer should be 2-3 sentences maximum
-- Focus on conceptual understanding, not implementation details
 `;
 
 const conceptExplainPrompt = (question) => `
-You are an expert technical educator specializing in explaining complex programming concepts to developers. Provide a comprehensive, beginner-friendly explanation for the given interview question.
+You are an expert technical educator.
 
-Question: "${question}"
+Explain this concept in a clean, developer-friendly way:
+"${question}"
 
-Instructions:
-1. Create a concise, descriptive title that summarizes the core concept (2-6 words)
-2. Write a detailed explanation (4-6 paragraphs) that:
-   - Starts with a simple analogy or real-world comparison
-   - Explains the "what" - what the concept is
-   - Explains the "why" - why it matters in practice
-   - Explains the "how" - how it's typically used
-   - Covers common pitfalls or best practices
-3. Include exactly one practical, well-commented code example in a markdown fenced code block with appropriate language tag
-4. Ensure the explanation builds understanding progressively from basic to advanced
+Mandatory output requirements:
+1. Return ONLY a raw JSON object.
+2. Do not wrap the whole response in markdown fences.
+3. The object must have exactly two keys: "title" and "explanation".
+4. "title" must be a short string of 2-6 words.
+5. "explanation" must be a single string containing the full explanation.
+6. The explanation string must be valid JSON text, so use escaped newlines as \n and escape quotes inside the string.
+7. The explanation must include one practical code example embedded as a Markdown fenced block inside the text, like: \n\n\`\`\`javascript\n// example\nconst value = 42;\n\`\`\`\n\n
+8. Keep the explanation beginner-friendly, structured, and useful for interviews.
+9. No extra text before or after the JSON object.
+10. The response must be parseable with JSON.parse().
 
-Output Format:
-Return ONLY a raw JSON object with this exact structure:
-{
-  "title": "Concise concept title",
-  "explanation": "Full multi-paragraph explanation with embedded code block like:\\n\\nStart with analogy...\\n\\n\`\`\`language\\n// Practical code example\\nconst example = 'value';\\n\`\`\`\\n\\nContinue explanation after code..."
-}
-
-Critical Rules:
-- Return ONLY the raw JSON object, no markdown fences
-- Start response with { and end with }
-- No extra text before or after the JSON
-- Code block must use proper markdown fencing with language tag
-- Explanation should be thorough but accessible to beginners
-- Leverage reasoning capabilities to provide deep, accurate explanations
+Example shape:
+{ "title": "Understanding Middleware", "explanation": "Middleware sits between...\n\n\`\`\`javascript\nconst app = express();\n\`\`\`\n\nIt helps..." }
 `;
 
 module.exports = {

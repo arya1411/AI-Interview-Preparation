@@ -1,12 +1,50 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const sessionSchema = new mongoose.Schema({
-    user : {type : mongoose.Schema.Types.ObjectId , ref : "User"},
-    role : {type : String , required : true},
-    experience : {type : String , required : true},
-    topicsToFocus :  {type : String , required : true },
-    description : String ,
-    questions : [{type : mongoose.Schema.Types.ObjectId , ref:"Question"}],
-} , {timestamps : true});
+const Session = sequelize.define('Session', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'Users',
+            key: 'id',
+        },
+    },
+    role: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    experience: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    topicsToFocus: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+}, {
+    timestamps: true,
+});
 
-module.exports = mongoose.model("Session" , sessionSchema);
+// Define associations
+Session.associate = (models) => {
+    Session.hasMany(models.Question, {
+        foreignKey: 'sessionId',
+        as: 'questions',
+    });
+    Session.belongsTo(models.User, {
+        foreignKey: 'userId',
+        as: 'user',
+    });
+};
+
+module.exports = Session;

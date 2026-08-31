@@ -2,10 +2,10 @@ import axios from "axios";
 import { BASE_URL } from "./apiPath";
 
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,        // FIXED (baseURL, not baseUrl)
-  timeout: 10000,
+  baseURL: BASE_URL,
+  timeout: 60000,
   headers: {
-    "Content-Type": "application/json",   // FIXED (removed space)
+    "Content-Type": "application/json",
     Accept: "application/json",
   },
 });
