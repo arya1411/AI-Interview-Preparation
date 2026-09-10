@@ -1,0 +1,23 @@
+# Ignore all node_modules everywhere
+node_modules/
+
+# Ignore env files everywhere
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+
+# Firebase / Google service account credentials
+
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Build outputs
+frontend/build
+backend/dist
+
+# OS
+.DS_Store
