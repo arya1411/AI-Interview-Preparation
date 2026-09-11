@@ -17,11 +17,21 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion', 'react-hot-toast', 'react-icons'],
-          'charts-vendor': ['chart.js', 'react-chartjs-2'],
-          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('framer-motion') || id.includes('react-hot-toast') || id.includes('react-icons')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
+              return 'charts-vendor';
+            }
+            if (id.includes('three') || id.includes('@react-three')) {
+              return 'three-vendor';
+            }
+          }
         },
       },
     },
