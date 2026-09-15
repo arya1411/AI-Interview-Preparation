@@ -279,11 +279,14 @@ const generateCoreSubjects = async (req, res) => {
     try {
         const { role, topicToFocus, numberOfQuestions } = req.body;
 
+        console.log('[Core Subjects] Request received:', { role, topicToFocus, numberOfQuestions });
+
         if (!role || !topicToFocus || !numberOfQuestions) {
             return res.status(400).json({ message: "role, topicToFocus and numberOfQuestions are required" });
         }
 
         const prompt = coreSubjectsPrompt(role, topicToFocus, numberOfQuestions);
+        console.log('[Core Subjects] Prompt generated, length:', prompt.length);
 
         const completion = await getGroqClient().chat.completions.create({
             model: GROQ_MODEL,
@@ -294,13 +297,20 @@ const generateCoreSubjects = async (req, res) => {
         });
 
         const rawText = completion.choices[0]?.message?.content;
+        console.log('[Core Subjects] Raw AI response length:', rawText?.length || 0);
+        
         if (!rawText) return res.status(500).json({ message: "AI returned an empty response" });
 
         // Strip <think>...</think> reasoning blocks emitted by qwen models
         const stripped = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
         const data = extractJsonArray(stripped) || extractJsonArray(rawText);
 
-        if (!data) return res.status(500).json({ message: "AI did not return a valid JSON array" });
+        if (!data) {
+            console.error('[Core Subjects] Failed to extract JSON array from:', stripped.substring(0, 200));
+            return res.status(500).json({ message: "AI did not return a valid JSON array" });
+        }
+
+        console.log('[Core Subjects] Extracted', data.length, 'questions from AI');
 
         const normalized = data
             .map((item) => {
@@ -316,10 +326,17 @@ const generateCoreSubjects = async (req, res) => {
             })
             .filter(Boolean);
 
-        if (!normalized.length) return res.status(500).json({ message: "AI did not return usable core subject data" });
+        if (!normalized.length) {
+            console.error('[Core Subjects] No valid questions after normalization');
+            return res.status(500).json({ message: "AI did not return usable core subject data" });
+        }
 
+        console.log('[Core Subjects] Returning', normalized.length, 'normalized questions');
         res.status(200).json(normalized);
     } catch (error) {
+        console.error('[Core Subjects] Error:', error.message);
+        console.error('[Core Subjects] Stack:', error.stack);
+        
         const status = error?.status || error?.response?.status || 500;
         const message = error?.message || "Unknown AI generation error";
         res.status(status === 404 ? 502 : 500).json({
