@@ -21,3 +21,39 @@ backend/dist
 
 # OS
 .DS_Store
+
+# Project-local language runtimes
+.local-runtimes/
+
+# Environment variants (keep safe configuration templates)
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Credentials and local agent configuration
+.aws/
+.agents/
+.codex/
+*service-account*.json
+*serviceAccount*.json
+*.pem
+*.key
+
+# Generated builds, caches, and local logs
+dist/
+dist-ssr/
+build/
+coverage/
+.cache/
+.hyperframes/
+*.log
+
+# Local editor and OS files
+.idea/
+.vscode/
+Thumbs.db
+
+# Local promotional project and implementation notes
+/prepai-promo/
+/DSA_IMPLEMENTATION_PLAN.md

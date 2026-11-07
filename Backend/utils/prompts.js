@@ -31,27 +31,48 @@ Example output:
 ]
 `;
 
-const conceptExplainPrompt = (question) => `
-You are an expert technical educator.
+const conceptExplainPrompt = (question, shortAnswer = '') => `
+You are an interview coach helping a learner understand a specific question after reading its short answer.
 
-Explain this concept in a clean, developer-friendly way:
-"${question}"
+Question: ${JSON.stringify(question)}
+Short answer already shown to the learner: ${JSON.stringify(shortAnswer)}
 
-Mandatory output requirements:
-1. Return ONLY a raw JSON object.
-2. Do not wrap the whole response in markdown fences.
-3. The object must have exactly two keys: "title" and "explanation".
-4. "title" must be a short string of 2-6 words.
-5. "explanation" must be a single string containing the full explanation.
-6. The explanation string must be valid JSON text — use \\n for newlines and escape any double quotes inside the string.
-7. If the concept is a programming/code concept, include one practical code example as a Markdown fenced block inside the explanation like: \\n\\n\`\`\`javascript\\n// example\\n\`\`\`\\n\\n. If it is a theory/CS concept (OS, DBMS, CN, OOPs, networking, etc.), skip the code block and use plain structured text instead.
-8. Keep the explanation clear, structured, and interview-ready (3-6 sentences or paragraphs).
-9. No extra text before or after the JSON object.
-10. The response must be parseable with JSON.parse().
-11. Do NOT wrap the output in \`\`\`json fences — output the raw JSON object directly.
+Build on that answer. Do not start with a definition, repeat its sentences, or produce a longer paraphrase.
+If the short answer contains an oversimplification or error, briefly correct it in the relevant section.
+Explain the reasoning and consequences using this exact structure inside the explanation string:
 
-Example shape:
-{ "title": "Understanding Deadlock", "explanation": "A deadlock occurs when two or more processes are blocked forever...\\n\\nFor a deadlock to occur, four conditions must hold simultaneously: mutual exclusion, hold and wait, no preemption, and circular wait.\\n\\nTo prevent deadlocks, systems use strategies like resource ordering, timeouts, or banker's algorithm." }
+## How it works
+Explain the underlying mechanism in 2-4 short steps. Connect cause to effect; show WHY the answer holds.
+For comparisons, explain the decisive difference and when each choice is appropriate.
+
+## Worked example
+Use ONE concrete scenario with named values, actions, and an observable result.
+Walk through what happens and why, rather than just naming a use case.
+For programming questions, use the language/framework named in the question (never default to JavaScript for Kotlin, Java, Python, etc.).
+Include a small runnable fenced code example when useful; show its output or failure with comments, and explain that result.
+For theory, operations, security, and design questions, trace a realistic scenario without forcing code.
+
+## Common mistake
+Identify ONE plausible misunderstanding, explain the consequence, and show the correct interpretation.
+Avoid generic advice such as "understand the basics" or "practice regularly".
+
+## Interview takeaway
+Give ONE useful decision rule or trade-off the learner can apply to a follow-up question.
+Do not repeat the opening answer or recap the other sections.
+
+Keep the whole response focused, around 180-300 words plus a short code example if needed.
+Skip filler, motivational introductions, repeated summaries, and unrelated concepts.
+Each section must add a distinct insight. Ground all four sections in the actual question.
+Keep technical guarantees precise: a read-only reference or interface alone does not imply deep immutability or thread safety.
+Do not turn common conventions into absolute language/runtime guarantees.
+For Kotlin in particular, List exposes read-only access; it is not a guarantee of deep immutability.
+A data class with val properties can still reference mutable state. Do not present either as automatically immutable.
+
+Output requirements:
+Return ONLY a valid JSON object with exactly two string keys: "title" and "explanation".
+The title is a specific 2-6 word label. The explanation contains all four Markdown headings above, in order.
+Escape newlines and quotes correctly inside JSON. Code fences belong inside the explanation string only.
+Do not wrap the JSON object in fences or emit reasoning outside it.
 `;
 
 /**

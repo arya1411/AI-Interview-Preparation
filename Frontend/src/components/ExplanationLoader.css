@@ -1,0 +1,71 @@
+.explanation-loader {
+  padding: 24px;
+  border: 1px solid #262626;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: var(--font-display);
+}
+
+.explanation-loader__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #262626;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.explanation-loader__label { color: #a3a3a3; }
+.explanation-loader__state { color: #737373; }
+
+.explanation-loader__title {
+  margin: 20px 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.explanation-loader__description {
+  margin: 0;
+  color: #a3a3a3;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* An indeterminate sequence; no percentage or simulated processing stages. */
+.explanation-loader__activity {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
+  width: min(100%, 240px);
+  margin-top: 24px;
+}
+
+.explanation-loader__activity > span {
+  height: 3px;
+  background: #262626;
+  animation: explanation-segment 1.8s steps(1, end) infinite;
+  animation-delay: calc(var(--segment) * 100ms);
+}
+
+@keyframes explanation-segment {
+  0%, 22% { background: #d4d4d4; }
+  23%, 100% { background: #262626; }
+}
+
+@media (max-width: 480px) {
+  .explanation-loader { padding: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explanation-loader__activity > span { animation: none; }
+  .explanation-loader__activity > span:nth-child(3n + 1) { background: #a3a3a3; }
+}

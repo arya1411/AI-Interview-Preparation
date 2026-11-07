@@ -1,426 +1,89 @@
-# PrepAI - AI Interview Preparation Platform
+# PrepAI — AI Interview Preparation
 
-> **Version 2.0** - Enhanced with Core Subjects, Test Mode, Analytics & PostgreSQL
+PrepAI is a React/Express application for AI-generated interview preparation, MCQ and descriptive assessments, core CS subjects, account analytics and multi-language DSA practice. It uses PostgreSQL with Sequelize, JWT authentication and Groq for AI generation/evaluation.
 
-PrepAI is a comprehensive full-stack interview preparation platform that generates role-specific technical interview questions using AI. It features structured preparation sessions, interactive test mode, performance analytics, and core CS fundamentals coverage.
+## Features
 
-## 🎯 Key Features
+- Role-, experience- and topic-based question generation, explanations, pins and personal notes.
+- MCQ and descriptive tests with scores and answer feedback.
+- Core CS subject preparation.
+- Analytics at `/analytics`: account totals, completed-test average, question difficulty/session type breakdowns and difficulty groups needing review.
+- Authenticated DSA workspace at `/dsa`: Monaco editor, JavaScript/Python/C++/Java execution, drafts, notes, bookmarks, verified solved progress, import and submission history.
 
-### **AI-Powered Question Generation**
-- **Role-specific questions** tailored by experience level and topic focus
-- **Multiple question formats**: Descriptive Q&A and Multiple Choice Questions (MCQ)
-- **Core Subjects module** covering OS, DBMS, CN, OOPs + domain-specific fundamentals
-- Powered by **Groq AI** (qwen/qwen3.8-27b model)
+The DSA default sheet contains eight sample problems. Analytics review areas currently group answers by difficulty, not subject. DSA progress is separate from preparation/test analytics. The cheat sheet and full DSA content are not implemented.
 
-### **Preparation & Test Modes**
-- **Preparation Mode**: Study with AI-generated explanations and personal notes
-- **Test Mode**: Timed assessments with instant scoring and detailed results
-- Question-level actions: pin/unpin, add notes, track status (mastered/needs-review/skipped)
+## Local setup
 
-### **Analytics Dashboard**
-- Performance tracking across sessions
-- Weak topic identification and improvement suggestions
-- Difficulty-wise breakdown and progress visualization
-- Historical test attempts and scoring trends
+Use Node.js 22.12+ (or a newer version supported by Vite 8), npm and a reachable PostgreSQL database with TLS. The local DSA runner additionally requires Linux, Bubblewrap, `prlimit`, Node, Python and a C++ compiler; Java requires a JDK. Judge0 is an optional execution provider.
 
-### **User Management**
-- Secure JWT authentication with bcrypt encryption
-- Profile customization with image upload
-- Session history and progress tracking
-
-## 🚀 Tech Stack
-
-### Frontend
-- **React 19.2** + **Vite 8.0** - Modern build tooling
-- **React Router 7.14** - Client-side routing
-- **Tailwind CSS 4.2** - Utility-first styling
-- **Axios** - HTTP client
-- **Framer Motion 12** - Smooth animations
-- **GSAP 3.14** - Advanced animations
-- **Three.js + React Three Fiber** - 3D graphics
-- **Chart.js + react-chartjs-2** - Data visualization
-- **React Hot Toast** - Notifications
-
-### Backend
-- **Node.js** + **Express.js** - REST API server
-- **PostgreSQL** (Neon) + **Sequelize** - Relational database with ORM
-- **JWT + bcrypt** - Secure authentication
-- **Groq SDK** - AI question generation
-- **Multer** - File upload handling
-- **express-rate-limit** - API throttling
-- **node-cron** - Scheduled tasks (server keep-alive)
-
-## 📁 Project Structure
-
-```text
-AI Interview Preparation/
-├── Backend/
-│   ├── config/
-│   │   └── database.js          # PostgreSQL Sequelize config
-│   ├── controllers/
-│   │   ├── aiControllers.js     # AI generation logic
-│   │   ├── analyticsController.js
-│   │   ├── authController.js
-│   │   ├── questionController.js
-│   │   ├── sessionController.js
-│   │   └── testController.js
-│   ├── middlewares/
-│   │   ├── authMiddleware.js    # JWT verification
-│   │   ├── rateLimiters.js      # Multi-layer rate limiting
-│   │   └── uploadMiddleware.js
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Session.js
-│   │   ├── Question.js
-│   │   ├── TestAttempt.js
-│   │   └── TestAnswer.js
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── sessionRoutes.js
-│   │   ├── questionRoutes.js
-│   │   ├── testRoutes.js
-│   │   └── analyticsRoutes.js
-│   ├── utils/
-│   │   ├── prompts.js           # AI prompt templates
-│   │   └── coreSubjectPrompt.js
-│   ├── uploads/                 # User profile images
-│   ├── server.js
-│   └── package.json
-├── Frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Modal.jsx
-│   │   │   ├── ThemeToggle.jsx
-│   │   │   └── layout/
-│   │   │       └── AppShell.jsx
-│   │   ├── context/
-│   │   │   ├── ThemeContext.jsx
-│   │   │   └── userContext.jsx
-│   │   ├── pages/
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── Auth/
-│   │   │   ├── Dashboard/
-│   │   │   ├── Session/
-│   │   │   ├── Test/
-│   │   │   ├── Core/
-│   │   │   └── Analytics/
-│   │   ├── routes/
-│   │   │   └── PrivateRoute.jsx
-│   │   ├── utils/
-│   │   │   ├── apiPath.js
-│   │   │   ├── axiosInstance.js
-│   │   │   └── roles.js
-│   │   └── App.jsx
-│   ├── vite.config.js
-│   └── package.json
-└── README.md
-```
-
-## 🔄 Core User Flow
-
-1. **Sign Up / Login** - JWT-based authentication
-2. **Create Session** - Choose role, experience, topics, and question format
-3. **AI Generation** - Backend generates tailored questions via Groq API
-4. **Study Mode** - Review questions, pin important ones, add personal notes
-5. **Request Explanations** - Generate detailed concept breakdowns with AI
-6. **Test Mode** - Take timed tests and get instant scoring
-7. **Analytics** - Track performance, identify weak areas, view progress
-
-## 📡 API Reference
-
-**Base URL (Development):** `http://localhost:8000`  
-**Base URL (Production):** `https://ai-interview-preparation-uw13.onrender.com`
-
-### Authentication Endpoints
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/auth/register` | ❌ | User registration |
-| POST | `/api/auth/login` | ❌ | User login (returns JWT) |
-| POST | `/api/auth/google` | ❌ | Google OAuth login |
-| GET | `/api/auth/profile` | ✅ | Get user profile |
-| POST | `/api/auth/upload-image` | ✅ | Upload profile image |
-
-### Session Management
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/sessions/create` | ✅ | Create new prep session |
-| GET | `/api/sessions/my-sessions` | ✅ | Get all user sessions |
-| GET | `/api/sessions/:id` | ✅ | Get session details |
-| DELETE | `/api/sessions/:id` | ✅ | Delete session |
-| POST | `/api/sessions/complete/:id` | ✅ | Mark session complete |
-
-### Question Actions
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/questions/add` | ✅ | Add custom question |
-| POST | `/api/questions/:id/pin` | ✅ | Pin/unpin question |
-| POST | `/api/questions/:id/note` | ✅ | Add/update note |
-| POST | `/api/questions/:id/status` | ✅ | Update status |
-| POST | `/api/questions/:id/explanation` | ✅ | Generate explanation |
-
-### AI Generation
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/ai/generate-questions` | ✅ | Generate Q&A questions |
-| POST | `/api/ai/generate-mcq` | ✅ | Generate MCQ questions |
-| POST | `/api/ai/generate-core-subjects` | ✅ | Generate core CS questions |
-| POST | `/api/ai/generate-explanation` | ✅ | Generate concept explanation |
-
-### Test Mode
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/test/:sessionId/start` | ✅ | Start test attempt |
-| POST | `/api/test/:attemptId/submit` | ✅ | Submit test answers |
-| GET | `/api/test/:attemptId` | ✅ | Get test attempt details |
-| GET | `/api/test/session/:sessionId` | ✅ | Get all attempts for session |
-
-### Analytics
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/analytics` | ✅ | Get user analytics |
-| GET | `/api/analytics/weak-topics` | ✅ | Get weak topic insights |
-
-### Health Check
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/ping` | ❌ | Server health check |
-
-## 🔒 Rate Limiting Strategy
-
-Multi-layer rate limiting for stability and cost protection:
-
-- **Global API Limiter** (100 req/15min) - Broad protection for all `/api` traffic
-- **Login Limiter** (5 req/15min) - Brute-force protection
-- **Register Limiter** (3 req/hour) - Sign-up abuse protection
-- **AI Burst Limiter** (10 req/minute) - Short-window spike prevention
-- **AI Daily Limiter** (50 req/day per user) - Sustainable AI usage
-
-All rate limit responses return **HTTP 429** with `retryAfter` value.
-
-## 🛠️ Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm 9+
-- PostgreSQL database (we use Neon serverless Postgres)
-- Groq API key from [console.groq.com/keys](https://console.groq.com/keys)
-
-### 1️⃣ Clone & Install
+Install dependencies in each directory:
 
 ```bash
-git clone https://github.com/arya1411/AI-Interview-Preparation.git
-cd AI-Interview-Preparation
-
-# Install backend dependencies
 cd Backend
 npm install
+cp .env.example .env
+```
 
-# Install frontend dependencies
-cd ../Frontend
+Set database credentials, `JWT_SECRET`, `GROQ_API_KEY`, `PORT=8000` and `CLIENT_URL=http://localhost:5173` in `Backend/.env`. Keep `DB_SYNC_ALTER=false` for startup without altering existing tables. Leave `SERVER_URL` empty locally; it enables an optional hosted keep-alive task. All secrets belong on the backend.
+
+```bash
+cd Frontend
 npm install
+cp .env.example .env
 ```
 
-### 2️⃣ Configure Backend Environment
+Set `VITE_API_URL=http://localhost:8000`. Optional `VITE_DSA_API_URL` overrides the API origin for DSA only. Restart Vite after environment changes; `.env.development.local` can hold local overrides. Frontend `VITE_*` variables are public.
 
-Create `Backend/.env`:
-
-```env
-# Database (PostgreSQL via Neon)
-DB_NAME=your_db_name
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_HOST=your_neon_host.neon.tech
-DB_PORT=5432
-
-# Authentication
-JWT_SECRET=your_strong_random_jwt_secret
-
-# Server
-PORT=8000
-
-# AI Service
-GROQ_API_KEY=your_groq_api_key
-
-# CORS (Production)
-CLIENT_URL=https://your-frontend-domain.vercel.app
-
-# Keep-alive (for Render free tier)
-SERVER_URL=https://your-backend-domain.onrender.com
-```
-
-**Get a free Groq API key:** Visit [console.groq.com/keys](https://console.groq.com/keys)
-
-### 3️⃣ Configure Frontend Environment
-
-Create `Frontend/.env`:
-
-```env
-# Backend API
-VITE_API_URL=http://localhost:8000
-
-# Firebase (optional - for future use)
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
-
-### 4️⃣ Run Backend
+Start the backend and frontend in separate terminals:
 
 ```bash
 cd Backend
 npm run dev
 ```
-
-Backend will start on `http://localhost:8000`
-
-### 5️⃣ Run Frontend
 
 ```bash
 cd Frontend
 npm run dev
 ```
 
-Frontend will start on `http://localhost:5173`
+Open `http://localhost:5173`, sign in and use the sidebar. The backend health endpoint is `http://localhost:8000/ping`. If PORT is unset, the server defaults to 5000, so configure both applications consistently.
 
-## 📜 Available Scripts
+## DSA execution
 
-### Backend
+`DSA_EXECUTION_MODE=local` runs solutions using Bubblewrap. Java is detected from `.local-runtimes/java`, `DSA_JAVA_HOME`, or a system JDK. Language runtimes are not installed by `npm install`. Local execution uses an in-memory queue and is intended for development/personal practice.
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Start server (production) |
-| `npm run dev` | Start with nodemon (development) |
+For a public deployment, use a maintained isolated Judge0-compatible service: set `DSA_EXECUTION_MODE=judge0`, `JUDGE0_URL`, credentials and language IDs in `Backend/.env`. Consult `.env.example` for supported variables. Never put judge credentials in frontend variables. The repository's `shared/` directory must remain accessible to both applications.
 
-### Frontend
+Imports accept JSON sheets with up to 200 questions, 50 tests per question and 1 MB. Download a template from Import Sheet. Import replaces the active sheet, drafts, notes, bookmarks and progress. C++/Java require typed signatures and language starters. Supported typed values are `int`, `int[]`, `string` and `bool`.
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
+## Checks
 
-## 🌐 Deployment
+```bash
+cd Frontend
+npm run lint
+npm test
+npm run build
+```
 
-### Backend (Render)
-- Platform: [Render.com](https://render.com)
-- Build Command: `npm install`
-- Start Command: `npm start`
-- Set all environment variables in Render dashboard
+```bash
+cd Backend
+npm run test:explanation
+npm run test:analytics
+npm run test:dsa
+npm run test:dsa:harnesses
+npm run test:dsa:local
+```
 
-### Frontend (Vercel)
-- Platform: [Vercel](https://vercel.com)
-- Framework: Vite
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- Set `VITE_API_URL` to your backend URL
+The local runner suite needs host namespace permissions. The harness script skips Java if it is absent from PATH; the local runner suite also detects the bundled JDK. Backend `npm test` is still a placeholder; use the named suites above.
 
-## 🔐 Security Best Practices
+## API and architecture
 
-- ✅ Never commit `.env` files to git (already gitignored)
-- ✅ Use strong, random `JWT_SECRET` (32+ characters)
-- ✅ Restrict CORS origins in production
-- ✅ Keep API keys secure and rotate regularly
-- ✅ Enable SSL/TLS in production
+See [PROJECT_ARCHITECTURE.md](PROJECT_ARCHITECTURE.md) for routes, models, authentication, rate limits, score scales and execution behavior. See [QA_STATUS.md](QA_STATUS.md) for verification results and outstanding browser checks.
 
+Key authenticated API groups are `/api/sessions`, `/api/questions`, `/api/ai`, `/api/test`, `/api/analytics` and `/api/dsa`. Authentication routes provide register, login, profile and image upload. Session completion uses `PUT /api/sessions/complete/:id`. Google OAuth is not implemented.
 
-## 🎨 UI Features
+## Deployment
 
-- **Dark/Light Theme Toggle** with persistent storage
-- **Responsive Design** for mobile, tablet, and desktop
-- **Smooth Animations** using Framer Motion and GSAP
-- **3D Effects** with Three.js and React Three Fiber
-- **Interactive Charts** for analytics visualization
-- **Toast Notifications** for user feedback
+Build the frontend with `npm run build` and serve `Frontend/dist` with SPA rewrites. Configure `VITE_API_URL` before building. Run the backend with `npm start`, configure database/JWT/Groq/CORS variables and persist uploads if profile images must survive restarts. PostgreSQL startup currently uses Sequelize synchronization; review schema changes before deployment. Preserve `shared/dsa-sheet.json` alongside both application directories.
 
-## 🧪 Testing Tips
-
-1. **Test Authentication Flow**
-   - Register new user
-   - Login and verify JWT token
-   - Access protected routes
-
-2. **Test Session Creation**
-   - Create descriptive Q&A session
-   - Create MCQ session
-   - Create core subjects session
-
-3. **Test AI Generation**
-   - Verify question quality and relevance
-   - Check difficulty distribution
-   - Validate response format
-
-4. **Test Test Mode**
-   - Start test attempt
-   - Submit answers
-   - View results and scoring
-
-5. **Test Analytics**
-   - Complete multiple sessions
-   - Check weak topics
-   - Verify progress tracking
-
-## 🚀 Future Enhancements
-
-- [ ] **Advanced Analytics** - Time-series performance tracking and ML-based insights
-- [ ] **Collaborative Sessions** - Share sessions with peers for group study
-- [ ] **Custom Question Banks** - Import/export question sets
-- [ ] **Video Interview Practice** - AI-powered mock video interviews
-- [ ] **Spaced Repetition** - Smart question scheduling based on forgetting curve
-- [ ] **Topic Recommendations** - AI-suggested topics based on weak areas
-- [ ] **Mobile App** - React Native mobile application
-- [ ] **API Documentation** - Swagger/OpenAPI interactive docs
-- [ ] **Automated Testing** - Unit and integration test coverage
-- [ ] **CI/CD Pipeline** - GitHub Actions for automated deployment
-- [ ] **Redis Caching** - Performance optimization for frequently accessed data
-- [ ] **WebSocket Support** - Real-time collaboration features
-- [ ] **Role-Based Access** - Admin dashboard for content management
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- **Groq** for providing fast and free AI inference
-- **Neon** for serverless PostgreSQL hosting
-- **Vercel** for frontend hosting
-- **Render** for backend hosting
-- React, Vite, and the entire open-source community
-
-## 📧 Contact
-
-- **Author**: Arya
-- **GitHub**: [@arya1411](https://github.com/arya1411)
-- **Repository**: [AI-Interview-Preparation](https://github.com/arya1411/AI-Interview-Preparation)
-- **Live Demo**: [PrepAI Platform](https://ai-interview-preparation-pied.vercel.app)
-
----
-
-<div align="center">
-
-**Built with ❤️ using React, Node.js, PostgreSQL & Groq AI**
-
-[⭐ Star this repo](https://github.com/arya1411/AI-Interview-Preparation) | [🐛 Report Bug](https://github.com/arya1411/AI-Interview-Preparation/issues) | [💡 Request Feature](https://github.com/arya1411/AI-Interview-Preparation/issues)
-
-</div>
+The frontend does not install language runtimes or deploy the DSA backend automatically. Existing hosted deployments need the updated backend routes and a configured execution provider to support DSA.

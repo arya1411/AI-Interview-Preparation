@@ -36,6 +36,9 @@ const connectDB = async () => {
     const TestAttempt = require('../models/TestAttempt');
     const TestAnswer = require('../models/TestAnswer');
 
+    require('../models/DsaWorkspace');
+    require('../models/DsaSubmission');
+
     // Setup model associations
     User.hasMany(Session, { foreignKey: 'userId', as: 'sessions' });
     Session.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -52,7 +55,7 @@ const connectDB = async () => {
     Question.hasMany(TestAnswer, { foreignKey: 'questionId', as: 'testAnswers' });
     TestAnswer.belongsTo(Question, { foreignKey: 'questionId', as: 'question' });
     
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: process.env.DB_SYNC_ALTER !== 'false' });
     console.log('Database synchronized');
   } catch (error) {
     console.error('Unable to connect to PostgreSQL:', error);

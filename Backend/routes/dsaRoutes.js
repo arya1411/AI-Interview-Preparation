@@ -1,0 +1,15 @@
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const { protect } = require('../middlewares/authMiddleware');
+const { createDsaHandlers, handle } = require('../controllers/dsaController');
+const router = express.Router();
+const handlers = createDsaHandlers();
+router.use(protect);
+const executionLimiter=rateLimit({windowMs:60*1000,max:6,keyGenerator:req=>String(req.user.id),standardHeaders:true,legacyHeaders:false,message:{message:'Execution limit reached. Wait a minute before running more code.'}});
+router.get('/workspace',handle(handlers.workspace));
+router.put('/workspace',handle(handlers.save));
+router.post('/workspace/import',handle(handlers.importSheet));
+router.post('/executions',executionLimiter,handle(handlers.execute));
+router.get('/submissions',handle(handlers.history));
+router.get('/submissions/:id',handle(handlers.submission));
+module.exports=router;

@@ -53,7 +53,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 
-app.use(express.json());
+app.use(express.json({ limit: "3mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", apiLimiter);
@@ -65,6 +65,7 @@ app.use('/api/sessions' , sessionRoute);
 app.use('/api/questions' , questionRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/dsa', require('./routes/dsaRoutes'));
 app.get("/ping", (req, res) => {
     res.status(200).send("Server is alive");
 });
@@ -84,7 +85,7 @@ const startServer = async () => {
         app.listen(PORT , () => {
             console.log(`Server Running on Port ${PORT}`);
 
-            const SERVER_URL = process.env.SERVER_URL; 
+            const SERVER_URL = process.env.SERVER_URL;
             if (SERVER_URL) {
                 cron.schedule("*/14 * * * *", async () => {
                     try {

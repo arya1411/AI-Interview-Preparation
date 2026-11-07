@@ -6,7 +6,7 @@ import AppShell from '../../components/layout/AppShell'
 import Modal from '../../components/Modal'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATH } from '../../utils/apiPath'
-import { getErrorMessage, normalizeQuestions, parseQuestionsResponse } from '../../utils/helper'
+import { getErrorMessage, parseQuestionsResponse } from '../../utils/helper'
 import { roles } from '../../utils/roles'
 import { notifyError, notifySuccess } from '../../utils/toast'
 

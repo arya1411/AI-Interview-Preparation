@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { FiUser, FiMail, FiUploadCloud, FiCamera, FiSquare } from 'react-icons/fi'
 import AppShell from '../components/layout/AppShell'
 import { useUser } from '../context/useUser'

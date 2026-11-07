@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { FiShield, FiUsers, FiActivity, FiSettings, FiSquare } from 'react-icons/fi'
 import AppShell from '../../components/layout/AppShell'
 
@@ -45,7 +44,7 @@ const AdminDashboard = () => {
 
       {/* Admin feature cards */}
       <div className="grid gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 md:grid-cols-3">
-        {ADMIN_CARDS.map((card, i) => {
+        {ADMIN_CARDS.map((card) => {
           const Icon = card.icon
           return (
             <article

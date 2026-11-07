@@ -8,8 +8,10 @@ import TestDashboard from './pages/Test/TestDashboard'
 import TestMode from './pages/Test/TestMode'
 import TestResult from './pages/Test/TestResult'
 import CoreSubjectsDashboard from './pages/Core/CoreSubjectsDashboard'
+import AnalyticsDashboard from './pages/Analytics/AnalyticsDashboard'
 import EditProfile from './pages/EditProfile'
 import PrivateRoute from './routes/PrivateRoute'
+import DSAWorkspace from './pages/DSA/DSAWorkspace'
 
 function App() {
   return (
@@ -19,11 +21,13 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
 
       <Route element={<PrivateRoute />}>
+        <Route path="/dsa" element={<DSAWorkspace />} />
         <Route path="/dashboard" element={<HomeDashboard />} />
         <Route path="/session/:id" element={<SessionDetail />} />
         <Route path="/test" element={<TestDashboard />} />
         <Route path="/session/:sessionId/test" element={<TestMode />} />
         <Route path="/test/:attemptId/result" element={<TestResult />} />
+        <Route path="/analytics" element={<AnalyticsDashboard />} />
         <Route path="/core" element={<CoreSubjectsDashboard />} />
         <Route path="/profile/edit" element={<EditProfile />} />
       </Route>

@@ -14,6 +14,7 @@ export const normalizeQuestions = (questions) =>
       id: q.id ?? q._id,
       question: q.question,
       answer: q.answer || '',
+      explanation: q.explanation || '',
       note: q.note || '',
       isPinned: Boolean(q.isPinned),
       difficulty: q.difficulty || 'medium',

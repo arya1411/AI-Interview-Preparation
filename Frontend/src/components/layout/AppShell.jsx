@@ -10,6 +10,8 @@ import {
   FiX,
   FiZap,
   FiLayers,
+  FiCode,
+  FiBarChart2,
 } from 'react-icons/fi'
 import { useUser } from '../../context/useUser'
 
@@ -17,26 +19,15 @@ const NAV_ITEMS = [
   { label: 'Dashboard',     path: '/dashboard', icon: FiHome   },
   { label: 'Test Arena',    path: '/test',       icon: FiZap   },
   { label: 'Core Subjects', path: '/core',       icon: FiLayers },
+  { label: 'DSA Practice', path: '/dsa', icon: FiCode },
+  { label: 'Analytics', path: '/analytics', icon: FiBarChart2 },
   { label: 'Profile',       path: '/profile/edit', icon: FiUser },
 ]
 
-const AppShell = ({ children, title, subtitle, compactHeader = false }) => {
-  const { user, logout } = useUser()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
-  const initials = (user?.name || 'G').slice(0, 2).toUpperCase()
-
-  const SidebarContent = () => (
+const SidebarContent = ({ initials, user, location, handleNavigation, handleLogout }) => (
     <div className="flex h-full flex-col border-r border-neutral-800 bg-neutral-950">
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-2.5 px-6 pb-8 pt-10">
+      <Link to="/" onClick={(event) => handleNavigation(event, '/')} className="flex items-center gap-2.5 px-6 pb-8 pt-10">
         <FiSquare className="text-white" size={24} strokeWidth={2.5} />
         <span className="text-sm font-bold tracking-widest uppercase text-white">
           PrepAI
@@ -52,7 +43,7 @@ const AppShell = ({ children, title, subtitle, compactHeader = false }) => {
             <Link
               key={item.path}
               to={item.path}
-              onClick={() => setSidebarOpen(false)}
+              onClick={(event) => handleNavigation(event, item.path)}
               className={`group flex items-center gap-3 px-3 py-2 text-xs font-semibold tracking-wide uppercase transition-all duration-200 ${
                 isActive
                   ? 'text-white'
@@ -93,11 +84,36 @@ const AppShell = ({ children, title, subtitle, compactHeader = false }) => {
     </div>
   )
 
+const AppShell = ({ children, title, subtitle, compactHeader = false, onBeforeNavigate }) => {
+  const { user, logout } = useUser()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const handleLogout = async () => {
+    if (onBeforeNavigate) {
+      try { await onBeforeNavigate() } catch { return }
+    }
+    logout()
+    navigate('/login')
+  }
+
+  const handleNavigation = async (event, path) => {
+    if (onBeforeNavigate && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      event.preventDefault()
+      try { await onBeforeNavigate() } catch { return }
+      navigate(path)
+    }
+    setSidebarOpen(false)
+  }
+
+  const initials = (user?.name || 'G').slice(0, 2).toUpperCase()
+
   return (
     <div className="flex min-h-screen bg-neutral-950">
       {/* ── Desktop sidebar ── */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">
-        <SidebarContent />
+        <SidebarContent initials={initials} user={user} location={location} handleNavigation={handleNavigation} handleLogout={handleLogout} />
       </aside>
 
       {/* ── Mobile sidebar overlay ── */}
@@ -118,20 +134,22 @@ const AppShell = ({ children, title, subtitle, compactHeader = false }) => {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden"
             >
-              <SidebarContent />
+              <SidebarContent initials={initials} user={user} location={location} handleNavigation={handleNavigation} handleLogout={handleLogout} />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
       {/* ── Main content ── */}
-      <div className="flex flex-1 flex-col lg:pl-64">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
         {/* Top bar */}
         <header className="sticky top-0 z-20 border-b border-neutral-800 bg-neutral-950 px-6 py-4 lg:px-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 type="button"
+                aria-label="Open navigation"
+                aria-expanded={sidebarOpen}
                 onClick={() => setSidebarOpen(true)}
                 className="grid h-10 w-10 place-items-center border border-neutral-800 text-white lg:hidden"
               >
@@ -159,7 +177,7 @@ const AppShell = ({ children, title, subtitle, compactHeader = false }) => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-6 py-10 lg:px-10">{children}</main>
+        <main className="min-w-0 flex-1 px-6 py-10 lg:px-10">{children}</main>
       </div>
     </div>
   )

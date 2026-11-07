@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
@@ -33,19 +32,25 @@ const AntigravityInner = ({
     const width = viewport.width || 100;
     const height = viewport.height || 100;
 
+    // A fixed seed keeps particle layouts stable across renders.
+    let seed = 123456789;
+    const random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
     for (let i = 0; i < count; i++) {
-      const t = Math.random() * 100;
-      const factor = 20 + Math.random() * 100;
-      const speed = 0.01 + Math.random() / 200;
-      const xFactor = -50 + Math.random() * 100;
-      const yFactor = -50 + Math.random() * 100;
-      const zFactor = -50 + Math.random() * 100;
+      const t = random() * 100;
+      const factor = 20 + random() * 100;
+      const speed = 0.01 + random() / 200;
+      const xFactor = -50 + random() * 100;
+      const yFactor = -50 + random() * 100;
+      const zFactor = -50 + random() * 100;
 
-      const x = (Math.random() - 0.5) * width;
-      const y = (Math.random() - 0.5) * height;
-      const z = (Math.random() - 0.5) * 20;
+      const x = (random() - 0.5) * width;
+      const y = (random() - 0.5) * height;
+      const z = (random() - 0.5) * 20;
 
-      const randomRadiusOffset = (Math.random() - 0.5) * 2;
+      const randomRadiusOffset = (random() - 0.5) * 2;
 
       temp.push({
         t,

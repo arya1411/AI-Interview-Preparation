@@ -29,7 +29,10 @@ export default function TestMode() {
 
   // descriptive state
   const [answers, setAnswers]     = useState({})          // { answerId: string }
-  const [draft, setDraft]         = useState('')
+  const [drafts, setDrafts]       = useState({})
+  const answerId = questions[current]?.answerId
+  const draft = drafts[answerId] ?? ''
+  const setDraft = (value) => setDrafts((prev) => ({ ...prev, [answerId]: value }))
 
   // MCQ state
   const [selected, setSelected]   = useState({})          // { answerId: optionIndex }
@@ -59,8 +62,8 @@ export default function TestMode() {
   // ── focus textarea on question change (descriptive only) ──────────────────
   useEffect(() => {
     if (phase === 'test' && questionFormat === 'descriptive') {
-      setDraft(answers[questions[current]?.answerId] ?? '')
-      setTimeout(() => textareaRef.current?.focus(), 80)
+      const timer = setTimeout(() => textareaRef.current?.focus(), 80)
+      return () => clearTimeout(timer)
     }
   }, [current, phase, questionFormat])
 
@@ -88,7 +91,6 @@ export default function TestMode() {
     if (!q) return
     setSubmitted((prev) => ({ ...prev, [q.answerId]: true }))
     setCurrent((c) => c + 1)
-    setDraft('')
   }
 
   // ── Ctrl/Cmd+Enter for descriptive ────────────────────────────────────────

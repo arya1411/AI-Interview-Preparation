@@ -1,0 +1,596 @@
+{
+  "name": "The DSA essentials",
+  "questions": [
+    {
+      "id": "two-sum",
+      "title": "Two Sum",
+      "topic": "Arrays & Hashing",
+      "difficulty": "Easy",
+      "description": "Given an array of integers nums and an integer target, return the indices of the two numbers that add up to target. Each input has exactly one solution. You may not use the same element twice. Return the smaller index first.",
+      "constraints": [
+        "2 ≤ nums.length ≤ 10⁴",
+        "−10⁹ ≤ nums[i], target ≤ 10⁹",
+        "Exactly one valid answer exists."
+      ],
+      "hint": "Can you remember each number you have already visited? A hash map lets you find its complement in constant time.",
+      "starter": "function solution(nums, target) {\n  // Return the indices of the two matching numbers.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            [
+              2,
+              7,
+              11,
+              15
+            ],
+            9
+          ],
+          "expected": [
+            0,
+            1
+          ]
+        },
+        {
+          "args": [
+            [
+              3,
+              2,
+              4
+            ],
+            6
+          ],
+          "expected": [
+            1,
+            2
+          ]
+        },
+        {
+          "args": [
+            [
+              3,
+              3
+            ],
+            6
+          ],
+          "expected": [
+            0,
+            1
+          ]
+        },
+        {
+          "args": [
+            [
+              -3,
+              4,
+              3,
+              90
+            ],
+            0
+          ],
+          "expected": [
+            0,
+            2
+          ]
+        }
+      ],
+      "signature": {
+        "args": [
+          "int[]",
+          "int"
+        ],
+        "returns": "int[]",
+        "names": [
+          "nums",
+          "target"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(nums, target) {\n  // Return the indices of the two matching numbers.\n  \n}",
+        "python": "def solution(nums, target):\n    # Write your solution here.\n    return []\n",
+        "cpp": "vector<int> solution(vector<int> nums, int target) {\n    // Write your solution here.\n    return {};\n}\n",
+        "java": "class Solution {\n    public static int[] solution(int[] nums, int target) {\n        // Write your solution here.\n        return new int[]{};\n    }\n}\n"
+      }
+    },
+    {
+      "id": "contains-duplicate",
+      "title": "Contains Duplicate",
+      "topic": "Arrays & Hashing",
+      "difficulty": "Easy",
+      "description": "Return true if any value appears at least twice in nums. Return false if every element is distinct.",
+      "constraints": [
+        "1 ≤ nums.length ≤ 10⁵",
+        "−10⁹ ≤ nums[i] ≤ 10⁹"
+      ],
+      "hint": "Compare the number of elements with the number of unique elements.",
+      "starter": "function solution(nums) {\n  // Return whether the array contains a duplicate.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            [
+              1,
+              2,
+              3,
+              1
+            ]
+          ],
+          "expected": true
+        },
+        {
+          "args": [
+            [
+              1,
+              2,
+              3,
+              4
+            ]
+          ],
+          "expected": false
+        },
+        {
+          "args": [
+            [
+              1
+            ]
+          ],
+          "expected": false
+        },
+        {
+          "args": [
+            [
+              0,
+              0
+            ]
+          ],
+          "expected": true
+        }
+      ],
+      "signature": {
+        "args": [
+          "int[]"
+        ],
+        "returns": "bool",
+        "names": [
+          "nums"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(nums) {\n  // Return whether the array contains a duplicate.\n  \n}",
+        "python": "def solution(nums):\n    # Write your solution here.\n    return False\n",
+        "cpp": "bool solution(vector<int> nums) {\n    // Write your solution here.\n    return false;\n}\n",
+        "java": "class Solution {\n    public static boolean solution(int[] nums) {\n        // Write your solution here.\n        return false;\n    }\n}\n"
+      }
+    },
+    {
+      "id": "valid-anagram",
+      "title": "Valid Anagram",
+      "topic": "Strings",
+      "difficulty": "Easy",
+      "description": "Given two strings s and t, return true if t is an anagram of s, and false otherwise. An anagram uses the same letters with the same frequencies in any order.",
+      "constraints": [
+        "1 ≤ s.length, t.length ≤ 5 × 10⁴",
+        "Inputs contain only lowercase English letters."
+      ],
+      "hint": "Count how many times each letter appears in both strings.",
+      "starter": "function solution(s, t) {\n  // Return whether the strings are anagrams.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            "anagram",
+            "nagaram"
+          ],
+          "expected": true
+        },
+        {
+          "args": [
+            "rat",
+            "car"
+          ],
+          "expected": false
+        },
+        {
+          "args": [
+            "a",
+            "ab"
+          ],
+          "expected": false
+        },
+        {
+          "args": [
+            "aacc",
+            "ccac"
+          ],
+          "expected": false
+        }
+      ],
+      "signature": {
+        "args": [
+          "string",
+          "string"
+        ],
+        "returns": "bool",
+        "names": [
+          "s",
+          "t"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(s, t) {\n  // Return whether the strings are anagrams.\n  \n}",
+        "python": "def solution(s, t):\n    # Write your solution here.\n    return False\n",
+        "cpp": "bool solution(string s, string t) {\n    // Write your solution here.\n    return false;\n}\n",
+        "java": "class Solution {\n    public static boolean solution(String s, String t) {\n        // Write your solution here.\n        return false;\n    }\n}\n"
+      }
+    },
+    {
+      "id": "binary-search",
+      "title": "Binary Search",
+      "topic": "Binary Search",
+      "difficulty": "Easy",
+      "description": "Given a sorted array nums in ascending order and an integer target, return the index of target. Return -1 if it does not exist. Aim for O(log n) time.",
+      "constraints": [
+        "1 ≤ nums.length ≤ 10⁴",
+        "All numbers in nums are unique."
+      ],
+      "hint": "Compare the middle value with the target and discard half the search interval.",
+      "starter": "function solution(nums, target) {\n  // Return the target index, or -1.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            [
+              -1,
+              0,
+              3,
+              5,
+              9,
+              12
+            ],
+            9
+          ],
+          "expected": 4
+        },
+        {
+          "args": [
+            [
+              -1,
+              0,
+              3,
+              5,
+              9,
+              12
+            ],
+            2
+          ],
+          "expected": -1
+        },
+        {
+          "args": [
+            [
+              5
+            ],
+            5
+          ],
+          "expected": 0
+        },
+        {
+          "args": [
+            [
+              1,
+              3
+            ],
+            1
+          ],
+          "expected": 0
+        }
+      ],
+      "signature": {
+        "args": [
+          "int[]",
+          "int"
+        ],
+        "returns": "int",
+        "names": [
+          "nums",
+          "target"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(nums, target) {\n  // Return the target index, or -1.\n  \n}",
+        "python": "def solution(nums, target):\n    # Write your solution here.\n    return 0\n",
+        "cpp": "int solution(vector<int> nums, int target) {\n    // Write your solution here.\n    return 0;\n}\n",
+        "java": "class Solution {\n    public static int solution(int[] nums, int target) {\n        // Write your solution here.\n        return 0;\n    }\n}\n"
+      }
+    },
+    {
+      "id": "valid-parentheses",
+      "title": "Valid Parentheses",
+      "topic": "Stacks",
+      "difficulty": "Easy",
+      "description": "Given a string containing only (, ), {, }, [ and ], determine whether it is valid. Open brackets must close in the correct order with the same type of bracket.",
+      "constraints": [
+        "1 ≤ s.length ≤ 10⁴",
+        "The string contains only bracket characters."
+      ],
+      "hint": "A stack remembers the most recently opened bracket.",
+      "starter": "function solution(s) {\n  // Return whether all brackets are balanced.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            "()[]{}"
+          ],
+          "expected": true
+        },
+        {
+          "args": [
+            "(]"
+          ],
+          "expected": false
+        },
+        {
+          "args": [
+            "([{}])"
+          ],
+          "expected": true
+        },
+        {
+          "args": [
+            "([)]"
+          ],
+          "expected": false
+        },
+        {
+          "args": [
+            "("
+          ],
+          "expected": false
+        }
+      ],
+      "signature": {
+        "args": [
+          "string"
+        ],
+        "returns": "bool",
+        "names": [
+          "s"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(s) {\n  // Return whether all brackets are balanced.\n  \n}",
+        "python": "def solution(s):\n    # Write your solution here.\n    return False\n",
+        "cpp": "bool solution(string s) {\n    // Write your solution here.\n    return false;\n}\n",
+        "java": "class Solution {\n    public static boolean solution(String s) {\n        // Write your solution here.\n        return false;\n    }\n}\n"
+      }
+    },
+    {
+      "id": "max-subarray",
+      "title": "Maximum Subarray",
+      "topic": "Dynamic Programming",
+      "difficulty": "Medium",
+      "description": "Find the contiguous, nonempty subarray with the largest sum and return its sum.",
+      "constraints": [
+        "1 ≤ nums.length ≤ 10⁵",
+        "−10⁴ ≤ nums[i] ≤ 10⁴"
+      ],
+      "hint": "At each position, decide whether to extend the previous subarray or start a new one.",
+      "starter": "function solution(nums) {\n  // Return the largest contiguous subarray sum.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            [
+              -2,
+              1,
+              -3,
+              4,
+              -1,
+              2,
+              1,
+              -5,
+              4
+            ]
+          ],
+          "expected": 6
+        },
+        {
+          "args": [
+            [
+              1
+            ]
+          ],
+          "expected": 1
+        },
+        {
+          "args": [
+            [
+              -3,
+              -2,
+              -5
+            ]
+          ],
+          "expected": -2
+        },
+        {
+          "args": [
+            [
+              5,
+              4,
+              -1,
+              7,
+              8
+            ]
+          ],
+          "expected": 23
+        }
+      ],
+      "signature": {
+        "args": [
+          "int[]"
+        ],
+        "returns": "int",
+        "names": [
+          "nums"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(nums) {\n  // Return the largest contiguous subarray sum.\n  \n}",
+        "python": "def solution(nums):\n    # Write your solution here.\n    return 0\n",
+        "cpp": "int solution(vector<int> nums) {\n    // Write your solution here.\n    return 0;\n}\n",
+        "java": "class Solution {\n    public static int solution(int[] nums) {\n        // Write your solution here.\n        return 0;\n    }\n}\n"
+      }
+    },
+    {
+      "id": "product-except-self",
+      "title": "Product of Array Except Self",
+      "topic": "Arrays & Hashing",
+      "difficulty": "Medium",
+      "description": "Return an array answer where answer[i] equals the product of every element in nums except nums[i]. Solve without division in O(n) time.",
+      "constraints": [
+        "2 ≤ nums.length ≤ 10⁵",
+        "−30 ≤ nums[i] ≤ 30",
+        "All prefix and suffix products fit in a 32-bit integer."
+      ],
+      "hint": "Multiply the product of the elements to the left by the product of the elements to the right.",
+      "starter": "function solution(nums) {\n  // Return the product array without using division.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            [
+              1,
+              2,
+              3,
+              4
+            ]
+          ],
+          "expected": [
+            24,
+            12,
+            8,
+            6
+          ]
+        },
+        {
+          "args": [
+            [
+              -1,
+              1,
+              0,
+              -3,
+              3
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            9,
+            0,
+            0
+          ]
+        },
+        {
+          "args": [
+            [
+              0,
+              0
+            ]
+          ],
+          "expected": [
+            0,
+            0
+          ]
+        }
+      ],
+      "signature": {
+        "args": [
+          "int[]"
+        ],
+        "returns": "int[]",
+        "names": [
+          "nums"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(nums) {\n  // Return the product array without using division.\n  \n}",
+        "python": "def solution(nums):\n    # Write your solution here.\n    return []\n",
+        "cpp": "vector<int> solution(vector<int> nums) {\n    // Write your solution here.\n    return {};\n}\n",
+        "java": "class Solution {\n    public static int[] solution(int[] nums) {\n        // Write your solution here.\n        return new int[]{};\n    }\n}\n"
+      }
+    },
+    {
+      "id": "trapping-rain-water",
+      "title": "Trapping Rain Water",
+      "topic": "Two Pointers",
+      "difficulty": "Hard",
+      "description": "Given nonnegative integers representing an elevation map with bars of width 1, return how many units of rainwater it can trap.",
+      "constraints": [
+        "1 ≤ height.length ≤ 2 × 10⁴",
+        "0 ≤ height[i] ≤ 10⁵"
+      ],
+      "hint": "Water at each index is limited by the shorter of the highest walls on its left and right.",
+      "starter": "function solution(height) {\n  // Return the total trapped water.\n  \n}",
+      "tests": [
+        {
+          "args": [
+            [
+              0,
+              1,
+              0,
+              2,
+              1,
+              0,
+              1,
+              3,
+              2,
+              1,
+              2,
+              1
+            ]
+          ],
+          "expected": 6
+        },
+        {
+          "args": [
+            [
+              4,
+              2,
+              0,
+              3,
+              2,
+              5
+            ]
+          ],
+          "expected": 9
+        },
+        {
+          "args": [
+            [
+              1
+            ]
+          ],
+          "expected": 0
+        },
+        {
+          "args": [
+            [
+              3,
+              2,
+              1
+            ]
+          ],
+          "expected": 0
+        }
+      ],
+      "signature": {
+        "args": [
+          "int[]"
+        ],
+        "returns": "int",
+        "names": [
+          "height"
+        ]
+      },
+      "starters": {
+        "javascript": "function solution(height) {\n  // Return the total trapped water.\n  \n}",
+        "python": "def solution(height):\n    # Write your solution here.\n    return 0\n",
+        "cpp": "int solution(vector<int> height) {\n    // Write your solution here.\n    return 0;\n}\n",
+        "java": "class Solution {\n    public static int solution(int[] height) {\n        // Write your solution here.\n        return 0;\n    }\n}\n"
+      }
+    }
+  ]
+}

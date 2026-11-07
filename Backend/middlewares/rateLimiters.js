@@ -31,7 +31,7 @@ const createLimiter = ({ windowMs, max, message, keyGenerator, skipSuccessfulReq
   });
 
 const userOrIpKey = (req) => {
-  const userId = req.user?._id?.toString();
+  const userId = (req.user?.id ?? req.user?._id)?.toString();
   return userId ? `user:${userId}` : `ip:${req.ip}`;
 };
 

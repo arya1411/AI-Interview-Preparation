@@ -153,13 +153,17 @@ const generateInterviewQuestions = async (req, res) => {
 
 const generateConceptExplanation = async (req, res) => {
     try {
-        const { topic } = req.body;
+        const { topic, shortAnswer = '' } = req.body || {};
 
-        if (!topic) {
+        if (typeof topic !== 'string' || !topic.trim()) {
             return res.status(400).json({ message: "Topic is required" });
         }
 
-        const prompt = conceptExplainPrompt(topic);
+        if (typeof shortAnswer !== 'string') {
+            return res.status(400).json({ message: "Short answer must be text" });
+        }
+
+        const prompt = conceptExplainPrompt(topic, shortAnswer);
 
         const completion = await getGroqClient().chat.completions.create({
             model: GROQ_MODEL,
@@ -169,6 +173,7 @@ const generateConceptExplanation = async (req, res) => {
                     content: prompt,
                 }
             ],
+            response_format: { type: "json_object" },
             temperature: 0.7,
             top_p: 0.95,
             max_tokens: 2048,

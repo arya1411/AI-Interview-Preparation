@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {
@@ -20,22 +20,11 @@ import axiosInstance from '../../utils/axiosInstance'
 import { API_PATH } from '../../utils/apiPath'
 import AppShell from '../../components/layout/AppShell'
 import Modal from '../../components/Modal'
+import ExplanationLoader from '../../components/ExplanationLoader'
+import ExplanationText from '../../components/ExplanationText'
 import { getErrorMessage, normalizeQuestions, parseQuestionsResponse } from '../../utils/helper'
 import { notifyError, notifySuccess } from '../../utils/toast'
-
-// Extract markdown fenced code blocks
-const extractCodeBlocks = (text = '') => {
-  const regex = /```([a-zA-Z0-9_+-]+)?\s*\r?\n([\s\S]*?)```/g
-  const blocks = []
-  let match
-  while ((match = regex.exec(text)) !== null) {
-    blocks.push({ language: match[1] || 'javascript', code: match[2] || '' })
-  }
-  return blocks
-}
-
-// Remove code blocks from text
-const stripCodeBlocks = (text = '') => text.replace(/```[\s\S]*?```/g, '').replace(/\n{3,}/g, '\n\n').trim()
+import { generateAndSaveExplanation, parseExplanationSections } from '../../utils/explanation'
 
 const SessionDetail = () => {
   const { id } = useParams()
@@ -44,6 +33,7 @@ const SessionDetail = () => {
   const [openQuestions, setOpenQuestions] = useState({})
   const [explanations, setExplanations] = useState({})
   const [loadingExplain, setLoadingExplain] = useState({})
+  const explanationRequests = useRef(new Set())
   const [generatingMore, setGeneratingMore] = useState(false)
   const [copiedBlockId, setCopiedBlockId] = useState(null)
   const [noteDialog, setNoteDialog] = useState({ open: false, questionId: null, text: '' })
@@ -61,8 +51,7 @@ const SessionDetail = () => {
         if (q.explanation) {
           explanationsMap[q._id || q.id] = {
             title: '',
-            text: stripCodeBlocks(q.explanation),
-            codeBlocks: extractCodeBlocks(q.explanation),
+            sections: parseExplanationSections(q.explanation),
           }
         }
       })
@@ -78,48 +67,38 @@ const SessionDetail = () => {
     fetchSession()
   }, [fetchSession])
 
-  const fetchExplanation = async (questionId, topic) => {
+  const fetchExplanation = async (questionId, topic, shortAnswer, regenerate = false) => {
+    if (explanationRequests.current.has(questionId)) return
+    explanationRequests.current.add(questionId)
     setLoadingExplain((prev) => ({ ...prev, [questionId]: true }))
     try {
-      const { data } = await axiosInstance.post(API_PATH.AI.GENERATE_EXPLANATION, { topic })
-      const rawExplanation = data.explanation || ''
-      const explanationData = {
-        title: data.title || '',
-        text: stripCodeBlocks(rawExplanation),
-        codeBlocks: extractCodeBlocks(rawExplanation),
+      const { saved } = await generateAndSaveExplanation({
+        client: axiosInstance,
+        generateUrl: API_PATH.AI.GENERATE_EXPLANATION,
+        saveUrl: API_PATH.QUESTION.EXPLANATION(questionId),
+        topic,
+        shortAnswer,
+        onGenerated: (data) => {
+          setExplanations((prev) => ({
+            ...prev,
+            [questionId]: {
+              title: data.title || '',
+              sections: parseExplanationSections(data.explanation),
+            },
+          }))
+          // Saving continues separately; it must not keep the response hidden.
+          setLoadingExplain((prev) => ({ ...prev, [questionId]: false }))
+        },
+      })
+      if (!saved) {
+        notifyError('Explanation generated, but could not be saved. It may be lost when you leave this page.')
+      } else {
+        notifySuccess(regenerate ? 'Explanation regenerated and saved' : 'Explanation generated and saved')
       }
-      
-      // Save explanation to database
-      await axiosInstance.post(API_PATH.QUESTION.EXPLANATION(questionId), { explanation: rawExplanation })
-      
-      setExplanations((prev) => ({
-        ...prev,
-        [questionId]: explanationData,
-      }))
     } catch (error) {
       notifyError(getErrorMessage(error, 'Could not generate explanation'))
     } finally {
-      setLoadingExplain((prev) => ({ ...prev, [questionId]: false }))
-    }
-  }
-
-  const onRegenerateExplain = async (questionId, topic) => {
-    setLoadingExplain((prev) => ({ ...prev, [questionId]: true }))
-    try {
-      const { data } = await axiosInstance.post(API_PATH.AI.GENERATE_EXPLANATION, { topic })
-      const rawExplanation = data.explanation || ''
-      setExplanations((prev) => ({
-        ...prev,
-        [questionId]: {
-          title: data.title || '',
-          text: stripCodeBlocks(rawExplanation),
-          codeBlocks: extractCodeBlocks(rawExplanation),
-        },
-      }))
-      notifySuccess('Explanation regenerated')
-    } catch (error) {
-      notifyError(getErrorMessage(error, 'Could not regenerate explanation'))
-    } finally {
+      explanationRequests.current.delete(questionId)
       setLoadingExplain((prev) => ({ ...prev, [questionId]: false }))
     }
   }
@@ -192,14 +171,8 @@ const SessionDetail = () => {
     notifySuccess('PDF exported successfully')
   }
 
-  const toggleQuestion = (questionId, questionText) => {
-    setOpenQuestions((prev) => {
-      const willOpen = !prev[questionId]
-      if (willOpen && !explanations[questionId]) {
-        fetchExplanation(questionId, questionText)
-      }
-      return { ...prev, [questionId]: willOpen }
-    })
+  const toggleQuestion = (questionId) => {
+    setOpenQuestions((prev) => ({ ...prev, [questionId]: !prev[questionId] }))
   }
 
   const onPinQuestion = async (questionId) => {
@@ -345,7 +318,7 @@ const SessionDetail = () => {
           return (
             <article key={q._id || `${q.question}-${index}`} className="border-b border-neutral-800 last:border-b-0">
               <div className="group px-5 py-5 transition-colors hover:bg-neutral-900/60">
-                <button type="button" onClick={() => toggleQuestion(q._id, q.question)} className="flex w-full items-center gap-4 text-left">
+                <button type="button" onClick={() => toggleQuestion(q._id)} className="flex w-full items-center gap-4 text-left">
                   <span className="text-[11px] font-bold tracking-widest text-neutral-500">{String(index + 1).padStart(2, '0')}</span>
                   <span className="flex-1 text-[15px] font-extrabold leading-tight tracking-tight text-white uppercase">{q.question}</span>
                   <div className="flex shrink-0 items-center gap-3">
@@ -366,7 +339,7 @@ const SessionDetail = () => {
 
               <AnimatePresence mode="wait">
                 {isOpen && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                  <Motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                     <div className="border-t border-neutral-800 px-6 pb-8 pt-6 space-y-6">
                       <div className="flex flex-wrap gap-3">
                         <button onClick={() => onPinQuestion(q._id)} className={`border px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition ${q.isPinned ? 'border-white bg-white text-black' : 'border-neutral-700 text-neutral-300 hover:border-white hover:text-white'}`}>
@@ -375,48 +348,64 @@ const SessionDetail = () => {
                         <button type="button" onClick={() => openNoteDialog(q)} className="flex items-center gap-2 border border-neutral-700 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-neutral-300 transition hover:border-white hover:text-white">
                           <FiEdit3 size={12} /> Note
                         </button>
-                        <button type="button" onClick={() => onRegenerateExplain(q._id, q.question)} disabled={isLoadingExplain} className="ml-auto flex items-center gap-2 border border-neutral-700 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-neutral-300 transition hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                          <FiRefreshCw size={12} className={isLoadingExplain ? 'animate-spin' : ''} /> Regenerate
-                        </button>
+
                       </div>
 
-                      {isLoadingExplain && (
-                        <div className="flex items-center gap-3 py-2">
-                          <div className="h-1 w-1 animate-bounce rounded-full bg-neutral-500" style={{ animationDelay: '0ms' }} />
-                          <div className="h-1 w-1 animate-bounce rounded-full bg-neutral-500" style={{ animationDelay: '150ms' }} />
-                          <div className="h-1 w-1 animate-bounce rounded-full bg-neutral-500" style={{ animationDelay: '300ms' }} />
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Synthesizing...</p>
+                      {q.answer && (
+                        <div className="border border-neutral-800 bg-neutral-900/30 p-6">
+                          <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400">Answer</p>
+                          <p className="whitespace-pre-line text-sm font-medium leading-relaxed tracking-wide text-neutral-200">{q.answer}</p>
                         </div>
                       )}
 
-                      {!isLoadingExplain && explData && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          disabled={explanationRequests.current.has(q._id)}
+                          onClick={() => fetchExplanation(q._id, q.question, q.answer, Boolean(explData))}
+                          className="flex items-center gap-2 border border-neutral-700 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-neutral-300 transition hover:border-white hover:text-white disabled:cursor-wait disabled:opacity-40"
+                        >
+                          <FiRefreshCw size={12} />
+                          {isLoadingExplain ? 'Generating explanation…' : explanationRequests.current.has(q._id) ? 'Saving explanation…' : explData ? 'New explanation' : 'Generate explanation'}
+                        </button>
+                      </div>
+
+                      {isLoadingExplain && <ExplanationLoader />}
+
+                      {explData && (
+                        <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                           {explData.title && <h4 className="text-base font-extrabold uppercase tracking-widest text-white">{explData.title}</h4>}
-                          {explData.text && (
-                            <div className="border border-neutral-800 bg-neutral-900/30 p-6">
-                              <p className="mb-3 text-[10px] font-bold tracking-widest text-neutral-400 uppercase">Detailed Explanation</p>
-                              <p className="whitespace-pre-line text-sm font-medium leading-relaxed tracking-wide text-neutral-200">{explData.text}</p>
-                            </div>
-                          )}
-                          {explData.codeBlocks.map((block, bIdx) => (
-                            <div key={bIdx} className="overflow-hidden rounded-lg border border-neutral-800">
-                              <div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900 px-4 py-2">
-                                <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-neutral-300 uppercase">
-                                  <FiCode size={13} /> {block.language}
-                                </div>
-                                <button type="button" onClick={() => onCopyCode(block.code, `${q._id}-${bIdx}`)} className="text-neutral-400 transition hover:text-white" aria-label="Copy code">
-                                  {copiedBlockId === `${q._id}-${bIdx}` ? <FiCheck size={14} /> : <FiCopy size={14} />}
-                                </button>
-                              </div>
-                              <SyntaxHighlighter language={block.language} style={oneDark} wrapLongLines customStyle={{ borderRadius: 0, margin: 0, background: '#0f1117', padding: '16px', fontSize: '12px', lineHeight: 1.6, border: 'none' }} codeTagProps={{ style: { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', background: 'transparent' } }}>
-                                {block.code}
-                              </SyntaxHighlighter>
-                            </div>
-                          ))}
-                        </motion.div>
+                          <div className="divide-y divide-neutral-800 border border-neutral-800 bg-neutral-900/20">
+                            {explData.sections.map((section, sectionIndex) => (
+                              <section key={sectionIndex} className="space-y-4 p-5 sm:p-6">
+                                <h5 className="flex items-start gap-3 text-[10px] font-bold uppercase leading-relaxed tracking-widest text-neutral-300">
+                                  {section.title && <span className="text-neutral-500" aria-hidden="true">{String(sectionIndex + 1).padStart(2, '0')}</span>}
+                                  {section.title || 'Detailed explanation'}
+                                </h5>
+                                {section.blocks.map((block, blockIndex) => {
+                                  if (block.type === 'text') return <ExplanationText key={blockIndex} text={block.text} />
+                                  const blockId = `${q._id}-${sectionIndex}-${blockIndex}`
+                                  return (
+                                    <div key={blockIndex} className="min-w-0 overflow-hidden border border-neutral-800">
+                                      <div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900 px-4 py-2">
+                                        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-neutral-300"><FiCode size={13} /> {block.language}</div>
+                                        <button type="button" onClick={() => onCopyCode(block.code, blockId)} className="text-neutral-400 transition hover:text-white" aria-label="Copy code">
+                                          {copiedBlockId === blockId ? <FiCheck size={14} /> : <FiCopy size={14} />}
+                                        </button>
+                                      </div>
+                                      <SyntaxHighlighter language={block.language} style={oneDark} wrapLongLines customStyle={{ borderRadius: 0, margin: 0, background: '#0a0a0a', padding: '16px', fontSize: '12px', lineHeight: 1.6, border: 'none' }} codeTagProps={{ style: { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', background: 'transparent' } }}>
+                                        {block.code}
+                                      </SyntaxHighlighter>
+                                    </div>
+                                  )
+                                })}
+                              </section>
+                            ))}
+                          </div>
+                        </Motion.div>
                       )}
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 )}
               </AnimatePresence>
             </article>
